@@ -7,7 +7,7 @@ import openai
 from logger.ve_logger import VeLogger
 from config.chatbot_config import ChatBotConfig
 
-__CHATMODELS__ = ["gpt-3.5-turbo"]
+__CHATMODELS__ = ["gpt-3.5-turbo", "gpt-4"]
 
 
 class ChatBot:
@@ -110,19 +110,25 @@ class ChatBot:
 
         return response_text
 
-    def _create_prompt(self, message: str=None):
+    def _create_prompt(self, message: str=None, context: str=None):
         """Function to construct prompt.
 
         Args:
             message (str): Message to get response for.
+            context (str): Context to answer from.
 
         Returns:
             str: Generated response.
 
         """
+        if context:
+            context = "\nContext:\n" + context
+        else:
+            context = ""
+
         if self.chat_engine in __CHATMODELS__:
             created_message = [
-                {"role": "system", "content": self.bot_description},
+                {"role": "system", "content": (self.bot_description + context)},
                 {"role": "user", "content": message}
             ]
         else:

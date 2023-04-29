@@ -15,8 +15,6 @@ if __name__ == "__main__":
         "پاسخ بده و اگر نمی‌دانستی بگو متاسفانه پاسخ سوال شما را نمیدانم."
     )
 
-    chatbot = ChatBot(chatbot_config=chatbot_config)
-
     #Creating the chatbot interface
     img = Image.open("resources/favicon.png")
     menu_items = {
@@ -25,7 +23,18 @@ if __name__ == "__main__":
         "توسط امیرحسین داغستانی توسعه یافته است."
     }
     st.set_page_config(page_title='ربات هوشمند همراه', page_icon=img, menu_items=menu_items)
-    st.title("ربات هوشمند پشتیبانی همراه اول 🤖")
+    st.title(f"ربات هوشمند پشتیبانی همراه اول 🤖")
+
+        
+    if 'generated_chat_engine' not in st.session_state:
+        st.session_state['generated_chat_engine'] = []
+        
+    chat_engine = st.selectbox(
+    'مدل زبانی ربات را انتخاب کنید.',
+    ('gpt-3.5-turbo', 'text-davinci-003', 'gpt-4'))
+    st.write('مدل انتخاب شده:', chat_engine)
+    chatbot_config.chat_engine = chat_engine
+    chatbot = ChatBot(chatbot_config=chatbot_config)
 
     FOOTER_STYLE = """
             <style>
@@ -64,12 +73,15 @@ if __name__ == "__main__":
 
     if user_input:
         output = chatbot.generate_response(user_input)
+        st.session_state.generated_chat_engine.append(chat_engine)
         # store the output 
         st.session_state.past.append(user_input)
         st.session_state.generated.append(output)
 
     if st.session_state['generated']:
         for i in range(len(st.session_state['generated'])-1, -1, -1):
+            message(st.session_state["generated_chat_engine"][i] + ":", 
+                    key=str(i) + "_engine")
             message(st.session_state["generated"][i], key=str(i))
             message(st.session_state['past'][i], is_user=True,
                     key=str(i) + '_user')
