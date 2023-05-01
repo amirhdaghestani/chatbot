@@ -132,8 +132,8 @@ class ChatBot:
                 {"role": "user", "content": message}
             ]
         else:
-            created_message = self.bot_description + "\nQuestion:\n" \
-                            + message + "\nAnswer:"
+            created_message = self.bot_description + "\nCustomer: " \
+                            + message + "\Agent: "
         return created_message
 
     def generate_response(self, message: str=None):
