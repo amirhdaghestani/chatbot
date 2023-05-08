@@ -28,4 +28,10 @@ class ChatBotConfig:
     temperature = float(os.getenv("TEMPERATURE")) \
                   if os.getenv("TEMPERATURE") else 0.5
     bot_description = str(os.getenv("BOT_DESC")) \
-                      if os.getenv("BOT_DESC") else "You are an AI assistant."
+                      if os.getenv("BOT_DESC") else ""
+    delim_context = str(os.getenv("DELIM_CONTEXT")) \
+                    if os.getenv("DELIM_CONTEXT") else "\n\n###\n\n"
+    prefix_prompt = str(os.getenv("PREFIX_PROMPT")) \
+                    if os.getenv("PREFIX_PROMPT") else "Customer: "
+    suffix_prompt = str(os.getenv("PREFIX_PROMPT")) \
+                    if os.getenv("PREFIX_PROMPT") else "\nAgent:"

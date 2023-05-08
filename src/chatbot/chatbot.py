@@ -24,7 +24,7 @@ class ChatBot:
 
         Returns:
             None
-        
+
         Raises:
             ValueError: when chatbot_config is not provided.
 
@@ -48,6 +48,9 @@ class ChatBot:
         self.stop_by = chatbot_config.stop_by
         self.temperature = chatbot_config.temperature
         self.bot_description = chatbot_config.bot_description
+        self.delim_context = chatbot_config.delim_context
+        self.prefix_prompt = chatbot_config.prefix_prompt
+        self.suffix_prompt = chatbot_config.suffix_prompt
 
         self.messages = self._init_messages()
 
@@ -122,18 +125,20 @@ class ChatBot:
 
         """
         if context:
-            context = "\nContext:\n" + context
+            context = "Context: " + context
         else:
             context = ""
 
         if self.chat_engine in __CHATMODELS__:
             created_message = [
-                {"role": "system", "content": (self.bot_description + context)},
+                {"role": "system", "content": (self.bot_description \
+                                               + self.delim_context + context \
+                                               + self.delim_context)},
                 {"role": "user", "content": message}
             ]
         else:
-            created_message = self.bot_description + "\nCustomer: " \
-                            + message + "\Agent: "
+            created_message = self.bot_description + self.delim_context \
+                            + self.prefix_prompt + message + self.suffix_prompt
         return created_message
 
     def generate_response(self, message: str=None):

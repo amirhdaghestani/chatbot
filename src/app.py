@@ -11,13 +11,44 @@ from chatbot.chatbot import ChatBot
 FINETUNED_MODELS = [
     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56'
 ]
-if __name__ == "__main__":
+
+CHAT_ENGINES = [
+    'gpt-3.5-turbo', 
+    'text-davinci-003', 
+    'gpt-4',
+    'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56',
+    'davinci:ft-personal:faq-2023-05-07-05-25-57'
+]
+
+def set_chat_config(chat_engine):
+    """Function to set chat_config for each chat engine."""
     chatbot_config = ChatBotConfig()
+    # Shared configs
+    chatbot_config.chat_engine = chat_engine
     chatbot_config.bot_description = (
         "تو ربات هوشمند پشتیبانی شرکت همراه اول هستی که کاربران همراه اول را " \
         "برای یافتن پاسخ سوال‌هایشان راهنمایی می‌کنی. با صداقت کامل به سوال‌ها " \
         "پاسخ بده و اگر نمی‌دانستی بگو متاسفانه پاسخ سوال شما را نمیدانم."
     )
+
+    # Exclusive configs
+    if chat_engine == 'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56':
+        chatbot_config.delim_context = "\n\n###\n\n"
+        chatbot_config.prefix_prompt = "Customer: "
+        chatbot_config.suffix_prompt = "\nAgent: "
+    elif chat_engine == 'davinci:ft-personal:faq-2023-05-07-05-25-57':
+        chatbot_config.stop_by = "\n###\n"
+        chatbot_config.delim_context = "\n\n###\n\n"
+        chatbot_config.prefix_prompt = "Customer: "
+        chatbot_config.suffix_prompt = "\nAgent:"
+    elif chat_engine == "text-davinci-003":
+        chatbot_config.delim_context = "\n\n###\n\n"
+        chatbot_config.prefix_prompt = "Question:\n"
+        chatbot_config.suffix_prompt = "\nAnswer:"
+
+    return chatbot_config
+
+if __name__ == "__main__":
 
     if 'question_answers' not in st.session_state:
         test_questions = pd.read_csv('resources/RBT_questions_not_in_train.csv')
@@ -52,10 +83,8 @@ if __name__ == "__main__":
         st.session_state['past'] = []
         
     chat_engine = st.selectbox(
-    'مدل زبانی ربات را انتخاب کنید.',
-    ('gpt-3.5-turbo', 'text-davinci-003', 'gpt-4', 
-     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56'))
-    chatbot_config.chat_engine = chat_engine
+        'مدل زبانی ربات را انتخاب کنید.', tuple(CHAT_ENGINES))
+    chatbot_config = set_chat_config(chat_engine)
     chatbot = ChatBot(chatbot_config=chatbot_config)
 
     show_chat_engine = st.checkbox("نام مدل زبانی در پاسخ نمایش داده شود.", 
