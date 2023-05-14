@@ -26,7 +26,7 @@ class ChatBotConfig:
     stop_by = str(os.getenv("STOP_BY")) \
               if os.getenv("STOP_BY") else None
     temperature = float(os.getenv("TEMPERATURE")) \
-                  if os.getenv("TEMPERATURE") else 0.5
+                  if os.getenv("TEMPERATURE") else 0.1
     bot_description = str(os.getenv("BOT_DESC")) \
                       if os.getenv("BOT_DESC") else ""
     delim_context = str(os.getenv("DELIM_CONTEXT")) \

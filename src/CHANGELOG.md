@@ -1,14 +1,26 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## [0.0.3] - 2023-05-08
+## [0.4.0] - 2023-05-14
+
+### Fixed
+
+- Fixed the config for prompt creation in chat models.
+
+### Added
+
+- Added support of additional models:
+    * Finetuned GPT davinci on FAQ 9 Epochs (davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45)
+    * Finetuned GPT davinci on Chat dataset (davinci:ft-personal:chat-2023-05-13-20-08-50)
+
+## [0.3.0] - 2023-05-08
 
 ### Added
 
 - Added support of additional models:
     * Finetuned GPT davinci on FAQ (davinci:ft-personal:faq-2023-05-07-05-25-57)
 
-## [0.0.2] - 2023-05-01
+## [0.2.0] - 2023-05-01
 
 ### Added
 
@@ -20,7 +32,7 @@ All notable changes to this project will be documented in this file.
     (davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56)
 - Added default questions with answers from database for finetune models.
 
-## [0.0.1] - 2023-04-22
+## [0.1.0] - 2023-04-22
 
 ### Added
 
