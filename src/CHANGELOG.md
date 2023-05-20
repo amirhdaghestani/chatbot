@@ -3,9 +3,9 @@
 All notable changes to this project will be documented in this file.
 ## [0.4.0] - 2023-05-14
 
-### Fixed
+### Changed
 
-- Fixed the config for prompt creation in chat models.
+- Changed the config for prompt creation in chat models.
 
 ### Added
 

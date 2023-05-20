@@ -13,13 +13,14 @@ FINETUNED_MODELS = [
 ]
 
 CHAT_ENGINES = [
-    'gpt-3.5-turbo', 
+    'gpt-3.5-turbo',
     'text-davinci-003', 
     'gpt-4',
     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56',
     'davinci:ft-personal:faq-2023-05-07-05-25-57',
     'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45',
-    'davinci:ft-personal:chat-2023-05-13-20-08-50'
+    'davinci:ft-personal:chat-2023-05-13-20-08-50',
+    'gpt-3.5-turbo-prompt-engineering'
 ]
 
 def set_chat_config(chat_engine):
@@ -39,6 +40,7 @@ def set_chat_config(chat_engine):
         chatbot_config.prefix_prompt = "Customer: "
         chatbot_config.suffix_prompt = "\nAgent: "
         chatbot_config.temperature = 0.1
+        chatbot_config.add_context = False
     elif chat_engine == 'davinci:ft-personal:faq-2023-05-07-05-25-57' \
         or chat_engine == 'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45':
         chatbot_config.stop_by = "\n###\n"
@@ -46,25 +48,34 @@ def set_chat_config(chat_engine):
         chatbot_config.prefix_prompt = "Customer: "
         chatbot_config.suffix_prompt = "\nAgent:"
         chatbot_config.temperature = 0.1
+        chatbot_config.add_context = False
     elif chat_engine == "davinci:ft-personal:chat-2023-05-13-20-08-50":
         chatbot_config.stop_by = ["\n###\n", "\n"]
         chatbot_config.delim_context = "\n\n###\n\n"
         chatbot_config.prefix_prompt = "کاربر: "
         chatbot_config.suffix_prompt = "\nربات:"
         chatbot_config.temperature = 0.1
+        chatbot_config.add_context = False
     elif chat_engine == "text-davinci-003":
         chatbot_config.delim_context = "\n\n###\n\n"
         chatbot_config.prefix_prompt = "Question:\n"
         chatbot_config.suffix_prompt = "\nAnswer:"
         chatbot_config.temperature = 0.5
+        chatbot_config.add_context = False
     elif chat_engine == "gpt-3.5-turbo" \
         or chat_engine == "gpt-4":
         chatbot_config.delim_context = ""
         chatbot_config.prefix_prompt = ""
         chatbot_config.suffix_prompt = ""
         chatbot_config.temperature = 0.5
-
-
+        chatbot_config.add_context = False
+    elif chat_engine == "gpt-3.5-turbo-prompt-engineering":
+        chatbot_config.chat_engine = "gpt-3.5-turbo"
+        chatbot_config.delim_context = ""
+        chatbot_config.prefix_prompt = ""
+        chatbot_config.suffix_prompt = ""
+        chatbot_config.temperature = 0.5
+        chatbot_config.add_context = True
 
     return chatbot_config
 
@@ -90,7 +101,7 @@ if __name__ == "__main__":
         "توسط امیرحسین داغستانی توسعه یافته است."
     }
     st.set_page_config(page_title='ربات هوشمند همراه', page_icon=img, menu_items=menu_items)
-    st.title(f"ربات هوشمند پشتیبانی همراه اول 🤖")
+    # st.title(f"ربات هوشمند پشتیبانی همراه اول 🤖")
         
     if 'generated_chat_engine' not in st.session_state:
         st.session_state['generated_chat_engine'] = []

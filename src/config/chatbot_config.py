@@ -35,3 +35,5 @@ class ChatBotConfig:
                     if os.getenv("PREFIX_PROMPT") else "Customer: "
     suffix_prompt = str(os.getenv("PREFIX_PROMPT")) \
                     if os.getenv("PREFIX_PROMPT") else "\nAgent:"
+    add_context = bool(os.getenv("ADD_CONTEXT")) \
+                  if os.getenv("ADD_CONTEXT") else False

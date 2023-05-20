@@ -6,8 +6,13 @@ import openai
 
 from logger.ve_logger import VeLogger
 from config.chatbot_config import ChatBotConfig
+from chatbot.chatbot_context import ChatBotContext
 
-__CHATMODELS__ = ["gpt-3.5-turbo", "gpt-4"]
+
+__CHATMODELS__ = [
+    "gpt-3.5-turbo", 
+    "gpt-4"
+]
 
 
 class ChatBot:
@@ -51,8 +56,10 @@ class ChatBot:
         self.delim_context = chatbot_config.delim_context
         self.prefix_prompt = chatbot_config.prefix_prompt
         self.suffix_prompt = chatbot_config.suffix_prompt
+        self.add_context = chatbot_config.add_context
 
         self.messages = self._init_messages()
+        self.chatbot_context = ChatBotContext()
 
     def _init_messages(self):
         """Initialize messages
@@ -146,6 +153,7 @@ class ChatBot:
         
         Args:
             message (str): Message to get response for.
+            add_context (bool): Whether to add context or not.
         
         Returns:
             str: Generated response.
@@ -159,7 +167,10 @@ class ChatBot:
             self.logger.error("message is None.")
             raise ValueError("Provide message when calling this function.")
 
-        prompt = self._create_prompt(message=message)
+        context = None
+        if self.add_context:
+            context = self.chatbot_context.get_context(message)
+        prompt = self._create_prompt(message=message, context=context)
 
         if self.chat_engine in __CHATMODELS__:
             response = self._chat_completion(message=prompt)

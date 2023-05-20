@@ -2,3 +2,5 @@ openai
 python-json-logger
 streamlit
 streamlit-chat
+faiss-cpu
+transformers
