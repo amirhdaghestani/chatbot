@@ -1,6 +1,7 @@
 """This module contains ChatBot class which is used for processing user input 
 and handling openai API calls"""
 import os
+import copy
 
 import openai
 
@@ -53,13 +54,20 @@ class ChatBot:
         self.stop_by = chatbot_config.stop_by
         self.temperature = chatbot_config.temperature
         self.bot_description = chatbot_config.bot_description
+        self.delim_botdesc = chatbot_config.delim_botdesc
         self.delim_context = chatbot_config.delim_context
+        self.delim_history = chatbot_config.delim_history
+        self.prefix_context = chatbot_config.prefix_context
         self.prefix_prompt = chatbot_config.prefix_prompt
         self.suffix_prompt = chatbot_config.suffix_prompt
         self.add_context = chatbot_config.add_context
+        self.max_history = chatbot_config.max_history
+        self.threshold_context = chatbot_config.threshold_context
+        self.num_retrieve_context = chatbot_config.num_retrieve_context
 
         self.messages = self._init_messages()
-        self.chatbot_context = ChatBotContext()
+        if chatbot_config.add_context:
+            self.chatbot_context = ChatBotContext(chatbot_config=chatbot_config)
 
     def _init_messages(self):
         """Initialize messages
@@ -68,13 +76,9 @@ class ChatBot:
             list: messages list.
 
         """
-        if self.chat_engine in __CHATMODELS__:
-            messages = [
-                {"role": "system", "content": self.bot_description}
-            ]
-        else:
-            messages = self.bot_description
-
+        messages = [
+            {"role": "system", "content": self.bot_description}
+        ]
         return messages
 
     def _chat_completion(self, message: str=None):
@@ -132,32 +136,69 @@ class ChatBot:
 
         """
         if context:
-            context = "Context: " + context
+            context = self.prefix_context + context
         else:
             context = ""
 
-        if self.chat_engine in __CHATMODELS__:
-            created_message = [
-                {"role": "system", "content": (self.bot_description \
-                                               + self.delim_context + context \
-                                               + self.delim_context)},
-                {"role": "user", "content": message}
-            ]
-        else:
-            created_message = self.bot_description + self.delim_context \
-                            + self.prefix_prompt + message + self.suffix_prompt
-        return created_message
+        messages = copy.copy(self.messages)
+
+        messages[0] = {
+            "role": "system", "content": (self.bot_description \
+                                          + self.delim_botdesc + context)
+        }
+        
+        messages.append({
+            "role": "user", "content": message
+        })
+
+        return messages
+    
+    def _convert_to_prompt_models(self, messages: str=None):
+        """Convert the message to prompt based models
+        
+        Args:
+            messages (str): message to be converted.
+        
+        Returns:
+            str: Converted message.
+
+        """
+        prompt_str = ""
+        for i, message in enumerate(messages):
+            if message['role'] == "system":
+                prompt_str += message['content'] + self.delim_context
+            elif message['role'] == "user":
+                prompt_str += self.prefix_prompt + message['content']
+            elif message['role'] == "assistant":
+                prompt_str += self.suffix_prompt + message['content'] \
+                    + self.delim_history
+        prompt_str += self.suffix_prompt
+
+        return prompt_str
+    
+    def _choose_best_response(self, response: list):
+        """To choose the best response.
+        
+        Args:
+            response (list): list of all responses of the model.
+        
+        Returns:
+            str: The best response.
+
+        """
+        # Not properly implemented yet.
+        return response[0]
 
     def generate_response(self, message: str=None):
         """Function to generate response from model.
-        
+
         Args:
             message (str): Message to get response for.
             add_context (bool): Whether to add context or not.
-        
+
         Returns:
             str: Generated response.
-        
+
         Raises:
             ValueError: when message is not provided.
 
@@ -167,14 +208,30 @@ class ChatBot:
             self.logger.error("message is None.")
             raise ValueError("Provide message when calling this function.")
 
+        if len(self.messages) > 2 * self.max_history:
+            del self.messages[1]
+            del self.messages[1]
+
         context = None
         if self.add_context:
-            context = self.chatbot_context.get_context(message)
-        prompt = self._create_prompt(message=message, context=context)
+            context = self.chatbot_context.get_context(
+                message,
+                num_retrieve=self.num_retrieve_context,
+                threshold=self.threshold_context)
+
+        messages = self._create_prompt(message=message, context=context)
 
         if self.chat_engine in __CHATMODELS__:
-            response = self._chat_completion(message=prompt)
+            response = self._chat_completion(message=messages)
         else:
-            response = self._prompt_completion(prompt=prompt)
+            messages_converted = self._convert_to_prompt_models(messages)
+            response = self._prompt_completion(prompt=messages_converted)
+
+        response = self._choose_best_response(response)
+        
+        self.messages = messages
+        self.messages.append(
+            {"role": "assistant", "content": response}
+        )
 
         return response

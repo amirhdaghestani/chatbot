@@ -3,6 +3,8 @@ import os
 
 from config.faiss_config import FaissConfig
 from config.vector_config import VectorConfig
+from config.chatbot_config import EmbeddingModel
+from config.chatbot_config import ChatBotConfig
 from faiss_services.faiss_service import FaissService
 from vector_services.vector_service import VectorService
 
@@ -10,7 +12,7 @@ from vector_services.vector_service import VectorService
 class ChatBotContext:
     """This class extracts context based on the input question"""
 
-    def __init__(self, path: str=None) -> None:
+    def __init__(self, chatbot_config: ChatBotConfig=None) -> None:
         """Initilizer of the class
         
         Args:
@@ -20,17 +22,33 @@ class ChatBotContext:
             None.
 
         """
-        self.faiss_config = FaissConfig()
-        self.vector_config = VectorConfig()
-
-        if path:
-            self.faiss_config.faiss_file_path = os.path.join(path, "faiss.idx")
-            self.faiss_config.database_file_path = os.path.join(
-                path, "database.csv")
+        self.faiss_config, self.vector_config = self._get_config(chatbot_config)
 
         self.faiss_service = FaissService(self.faiss_config)
         self.vector_service = VectorService(self.vector_config)
 
+    def _get_config(self, chatbot_config: ChatBotConfig):
+        faiss_config = FaissConfig()
+        vector_config = VectorConfig()
+
+        if chatbot_config.embedding_model == EmbeddingModel.ADA:
+            faiss_config.faiss_file_path = "resources/faiss_ada.idx"
+            faiss_config.database_file_path = "resources/database_ada.csv"
+            faiss_config.vector_size = 1536
+
+            vector_config.api_key = chatbot_config.api_key
+            vector_config.model = chatbot_config.embedding_model
+        
+        elif chatbot_config.embedding_model == EmbeddingModel.ZIBERT:
+            faiss_config.faiss_file_path = "resources/faiss_zibert.idx"
+            faiss_config.database_file_path = "resources/database_zibert.csv"
+            faiss_config.vector_size = 256
+
+            vector_config.model = chatbot_config.embedding_model
+            vector_config.model_path = "resources/zibert_v2"
+        
+        return faiss_config, vector_config
+    
     def _vectorize(self, text: str) -> list:
         """Get the embedding of the input.
         

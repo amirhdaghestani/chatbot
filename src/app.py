@@ -1,11 +1,13 @@
 """Main module"""
-import streamlit as st
-from streamlit_chat import message
 from PIL import Image
 import random
-import pandas as pd
 
-from config.chatbot_config import ChatBotConfig
+import pandas as pd
+import streamlit as st
+from streamlit_chat import message
+
+from config.chatbot_config import get_chat_config, ChatBotModel
+from config.vector_config import EmbeddingModel
 from chatbot.chatbot import ChatBot
 
 FINETUNED_MODELS = [
@@ -13,71 +15,24 @@ FINETUNED_MODELS = [
 ]
 
 CHAT_ENGINES = [
+    'gpt-3.5-turbo-prompt-engineering',
     'gpt-3.5-turbo',
-    'text-davinci-003', 
+    'text-davinci-003-prompt-engineering',
+    'text-davinci-003',
+    'gpt-4-prompt-engineering',
     'gpt-4',
+    'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45-prompt-engineering'
+    'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45',
     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56',
     'davinci:ft-personal:faq-2023-05-07-05-25-57',
-    'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45',
     'davinci:ft-personal:chat-2023-05-13-20-08-50',
-    'gpt-3.5-turbo-prompt-engineering'
 ]
 
-def set_chat_config(chat_engine):
-    """Function to set chat_config for each chat engine."""
-    chatbot_config = ChatBotConfig()
-    # Shared configs
-    chatbot_config.chat_engine = chat_engine
-    chatbot_config.bot_description = (
-        "تو ربات هوشمند پشتیبانی شرکت همراه اول هستی که کاربران همراه اول را " \
-        "برای یافتن پاسخ سوال‌هایشان راهنمایی می‌کنی. با صداقت کامل به سوال‌ها " \
-        "پاسخ بده و اگر نمی‌دانستی بگو متاسفانه پاسخ سوال شما را نمیدانم."
-    )
+EMBEDDING_MODEL = [
+    'zibert_v2',
+    'text-embedding-ada-002'
+]
 
-    # Exclusive configs
-    if chat_engine == 'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56':
-        chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.prefix_prompt = "Customer: "
-        chatbot_config.suffix_prompt = "\nAgent: "
-        chatbot_config.temperature = 0.1
-        chatbot_config.add_context = False
-    elif chat_engine == 'davinci:ft-personal:faq-2023-05-07-05-25-57' \
-        or chat_engine == 'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45':
-        chatbot_config.stop_by = "\n###\n"
-        chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.prefix_prompt = "Customer: "
-        chatbot_config.suffix_prompt = "\nAgent:"
-        chatbot_config.temperature = 0.1
-        chatbot_config.add_context = False
-    elif chat_engine == "davinci:ft-personal:chat-2023-05-13-20-08-50":
-        chatbot_config.stop_by = ["\n###\n", "\n"]
-        chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.prefix_prompt = "کاربر: "
-        chatbot_config.suffix_prompt = "\nربات:"
-        chatbot_config.temperature = 0.1
-        chatbot_config.add_context = False
-    elif chat_engine == "text-davinci-003":
-        chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.prefix_prompt = "Question:\n"
-        chatbot_config.suffix_prompt = "\nAnswer:"
-        chatbot_config.temperature = 0.5
-        chatbot_config.add_context = False
-    elif chat_engine == "gpt-3.5-turbo" \
-        or chat_engine == "gpt-4":
-        chatbot_config.delim_context = ""
-        chatbot_config.prefix_prompt = ""
-        chatbot_config.suffix_prompt = ""
-        chatbot_config.temperature = 0.5
-        chatbot_config.add_context = False
-    elif chat_engine == "gpt-3.5-turbo-prompt-engineering":
-        chatbot_config.chat_engine = "gpt-3.5-turbo"
-        chatbot_config.delim_context = ""
-        chatbot_config.prefix_prompt = ""
-        chatbot_config.suffix_prompt = ""
-        chatbot_config.temperature = 0.5
-        chatbot_config.add_context = True
-
-    return chatbot_config
 
 if __name__ == "__main__":
 
@@ -115,8 +70,28 @@ if __name__ == "__main__":
         
     chat_engine = st.selectbox(
         'مدل زبانی ربات را انتخاب کنید.', tuple(CHAT_ENGINES))
-    chatbot_config = set_chat_config(chat_engine)
-    chatbot = ChatBot(chatbot_config=chatbot_config)
+    add_context = False
+    embedding_model = EmbeddingModel.ZIBERT
+    if chat_engine.find("-prompt-engineering") != -1:
+        add_context = True
+        chat_engine_model = chat_engine[:chat_engine.find("-prompt-engineering")]
+        embedding_model = st.selectbox(
+            'وکتورایزر جست‌وجوی کانتکست را انتخاب کنید.', tuple(EMBEDDING_MODEL))
+    else:
+        chat_engine_model = chat_engine
+
+    if add_context:
+        chat_engine += "-" + embedding_model
+    
+    with st.spinner("لطفاً منتظر بمانید ..."):
+        chatbot_config = get_chat_config(ChatBotModel(chat_engine_model), 
+                                        add_context=add_context,
+                                        embedding_model=EmbeddingModel(embedding_model))
+        
+        if chat_engine not in st.session_state:
+            st.session_state[chat_engine] = ChatBot(chatbot_config=chatbot_config)
+
+    chatbot = st.session_state[chat_engine]
 
     show_chat_engine = st.checkbox("نام مدل زبانی در پاسخ نمایش داده شود.", 
                                    value=True)

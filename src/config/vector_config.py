@@ -21,3 +21,12 @@ class VectorConfig:
             if os.getenv("VECTOR_MODEL") else EmbeddingModel.ZIBERT
     model_path = str(os.getenv("MODEL_PATH")) \
                  if os.getenv("MODEL_PATH") else "/home/amir/.deepvectorizer/zibert_v2"
+    
+    def __init__(self, model: EmbeddingModel=None, api_key: str=None,
+                 model_path: str=None) -> None:
+        if model:
+            self.model = model
+        if model_path:
+            self.model_path = model_path
+        if api_key:
+            self.api_key = api_key
