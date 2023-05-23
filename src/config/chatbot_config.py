@@ -60,7 +60,7 @@ class ChatBotConfig:
     max_history = int(os.getenv("MAX_HISTORY")) \
                    if os.getenv("MAX_HISTORY") else 5
     threshold_context = float(os.getenv("THRESHOLD_CONTEXT")) \
-                        if os.getenv("THRESHOLD_CONTEXT") else 0.7
+                        if os.getenv("THRESHOLD_CONTEXT") else 0.5
     num_retrieve_context = int(os.getenv("NUM_RETRIEVE_CONTEXT")) \
                            if os.getenv("NUM_RETRIEVE_CONTEXT") else 10
     
@@ -142,7 +142,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = ""
         chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.7
+        chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 5
     
     elif chat_engine == ChatBotModel.DAVINCI:
@@ -156,7 +156,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAnswer:"
         chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.7
+        chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
 
     elif chat_engine == ChatBotModel.DAVINCIFAQ \
@@ -172,7 +172,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAgent:"
         chatbot_config.temperature = 0.1
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.7
+        chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
 
     elif chat_engine == ChatBotModel.DAVINCIRBT:
@@ -186,7 +186,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAgent: "
         chatbot_config.temperature = 0.1
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.7
+        chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
     
     elif chat_engine == ChatBotModel.DAVINCICHAT:
@@ -201,7 +201,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nربات:"
         chatbot_config.temperature = 0.1
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.7
+        chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
 
     # To overwrite
