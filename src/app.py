@@ -56,7 +56,7 @@ if __name__ == "__main__":
         "توسط امیرحسین داغستانی توسعه یافته است."
     }
     st.set_page_config(page_title='ربات هوشمند همراه', page_icon=img, menu_items=menu_items)
-    # st.title(f"ربات هوشمند پشتیبانی همراه اول 🤖")
+    st.title(f"ربات هوشمند پشتیبانی همراه اول 🤖")
         
     if 'generated_chat_engine' not in st.session_state:
         st.session_state['generated_chat_engine'] = []

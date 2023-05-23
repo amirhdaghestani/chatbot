@@ -1,6 +1,29 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [0.5.0] - 2023-05-22
+
+### Added
+
+- Added vector database (Faiss)
+- Added ZIBERT_v2 vectorizer model
+- Added OpenAI ADA vectorizer model
+- Added search context within the vector database
+- Added auto config generator for different models
+- Added support for storing history of the conversation and feeding it to model.
+- Added message convertor to text format.
+- Added support for additional models (with context injection):
+    * GPT-Turbo-Prompt-Engineering
+    * GPT-4-Prompt-Engineering
+    * GPT-Davinci-Prompt-Engineering
+    * GPT-Davinci-9Epoch-Prompt-Engineering
+
+### Changed
+
+- Refactored the code
+- Changed the default message handler to chat format.
+
 ## [0.4.0] - 2023-05-14
 
 ### Changed

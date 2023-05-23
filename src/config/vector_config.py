@@ -20,7 +20,7 @@ class VectorConfig:
     model = EmbeddingModel(os.getenv("VECTOR_MODEL")) \
             if os.getenv("VECTOR_MODEL") else EmbeddingModel.ZIBERT
     model_path = str(os.getenv("MODEL_PATH")) \
-                 if os.getenv("MODEL_PATH") else "/home/amir/.deepvectorizer/zibert_v2"
+                 if os.getenv("MODEL_PATH") else "resources/zibert_v2"
     
     def __init__(self, model: EmbeddingModel=None, api_key: str=None,
                  model_path: str=None) -> None:
