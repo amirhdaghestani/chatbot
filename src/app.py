@@ -21,7 +21,7 @@ CHAT_ENGINES = [
     'text-davinci-003',
     'gpt-4-prompt-engineering',
     'gpt-4',
-    'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45-prompt-engineering'
+    'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45-prompt-engineering',
     'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45',
     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56',
     'davinci:ft-personal:faq-2023-05-07-05-25-57',
