@@ -29,8 +29,8 @@ CHAT_ENGINES = [
 ]
 
 EMBEDDING_MODEL = [
+    'text-embedding-ada-002',
     'zibert_v2',
-    'text-embedding-ada-002'
 ]
 
 
@@ -87,7 +87,6 @@ if __name__ == "__main__":
         chatbot_config = get_chat_config(ChatBotModel(chat_engine_model), 
                                         add_context=add_context,
                                         embedding_model=EmbeddingModel(embedding_model))
-        
         if chat_engine not in st.session_state:
             st.session_state[chat_engine] = ChatBot(chatbot_config=chatbot_config)
 
