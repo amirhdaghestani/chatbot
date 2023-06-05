@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2023-06-5
+
+### Fix
+
+- Bug in chat completion requests.
+
+### Changed
+
+- Temperature for models.
+
+### Removed
+
+- GPT-4 due to API unavailability.
+
 ## [0.5.0] - 2023-05-22
 
 ### Added
