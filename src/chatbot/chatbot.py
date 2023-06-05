@@ -93,10 +93,19 @@ class ChatBot:
         """
         # Call API
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=message
+            model=self.chat_engine, 
+            messages=message,
+            max_tokens=self.max_tokens,
+            n=self.num_responses,
+            stop=self.stop_by,
+            temperature=self.temperature,
         )
 
-        return [response.choices[0].message.content]
+        response_text = []
+        for choice in response.choices:
+            response_text.append(choice.message.content)
+
+        return response_text
 
     def _prompt_completion(self, prompt: str=None):
         """Function to call prompt completion from openai.
@@ -110,7 +119,7 @@ class ChatBot:
         """
         # Call API
         response = openai.Completion.create(
-            engine=self.chat_engine,
+            model=self.chat_engine,
             prompt=prompt,
             max_tokens=self.max_tokens,
             n=self.num_responses,
@@ -227,11 +236,11 @@ class ChatBot:
             messages_converted = self._convert_to_prompt_models(messages)
             response = self._prompt_completion(prompt=messages_converted)
 
-        response = self._choose_best_response(response)
+        best_response = self._choose_best_response(response)
         
         self.messages = messages
         self.messages.append(
-            {"role": "assistant", "content": response}
+            {"role": "assistant", "content": best_response}
         )
 
         return response

@@ -125,22 +125,24 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.embedding_model = embedding_model
 
     chatbot_config.bot_description = (
-        "تو ربات هوشمند پشتیبانی شرکت همراه اول هستی که کاربران همراه اول را " \
-        "برای یافتن پاسخ سوال‌هایشان راهنمایی می‌کنی. با صداقت کامل به سوال‌ها " \
-        "پاسخ بده و اگر نمی‌دانستی بگو متاسفانه پاسخ سوال شما را نمیدانم."
+        "تو ربات هوشمند پشتیبانی شرکت همراه اول هستی. " \
+        "بیا مرحله به مرحله فکر کنیم. لطفاَ تنها با اطلاعات ارائه شده در کانتکست پاسخ سوال را بده. " \
+        "اگر پاسخ سوال در داخل کانتکست ارائه نشده بود بگو متاسفانه پاسخ سوال شما را نمیدانم."
     )
 
     # Exclusive configs
     if chat_engine == ChatBotModel.GPT4 or chat_engine == ChatBotModel.TURBO:
         chatbot_config.max_tokens = 512
         chatbot_config.num_responses = 1
-        chatbot_config.delim_botdesc = ""
-        chatbot_config.delim_context = ""
+        chatbot_config.delim_botdesc = "\n\n###\n\n"
         chatbot_config.delim_context = ""
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = ""
         chatbot_config.suffix_prompt = ""
-        chatbot_config.temperature = 0.3
+        if chatbot_config.add_context:
+            chatbot_config.temperature = 0
+        else:
+            chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
         chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 5
@@ -154,7 +156,10 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "Question:\n"
         chatbot_config.suffix_prompt = "\nAnswer:"
-        chatbot_config.temperature = 0.3
+        if chatbot_config.add_context:
+            chatbot_config.temperature = 0
+        else:
+            chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
         chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
@@ -170,7 +175,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "Customer: "
         chatbot_config.suffix_prompt = "\nAgent:"
-        chatbot_config.temperature = 0.1
+        chatbot_config.temperature = 0
         chatbot_config.max_history = 2
         chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
@@ -184,7 +189,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "Customer: "
         chatbot_config.suffix_prompt = "\nAgent: "
-        chatbot_config.temperature = 0.1
+        chatbot_config.temperature = 0
         chatbot_config.max_history = 2
         chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
@@ -199,7 +204,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "کاربر: "
         chatbot_config.suffix_prompt = "\nربات:"
-        chatbot_config.temperature = 0.1
+        chatbot_config.temperature = 0
         chatbot_config.max_history = 2
         chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
