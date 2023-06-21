@@ -4,3 +4,4 @@ streamlit
 streamlit-chat
 faiss-cpu
 transformers
+tiktoken
