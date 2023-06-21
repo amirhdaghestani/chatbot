@@ -8,6 +8,7 @@ import openai
 from logger.ve_logger import VeLogger
 from config.chatbot_config import ChatBotConfig
 from chatbot.chatbot_context import ChatBotContext
+from chatbot.chatbot_post_process import ChatBotPostProcess
 
 
 __CHATMODELS__ = [
@@ -64,10 +65,14 @@ class ChatBot:
         self.max_history = chatbot_config.max_history
         self.threshold_context = chatbot_config.threshold_context
         self.num_retrieve_context = chatbot_config.num_retrieve_context
+        self.post_process = chatbot_config.post_process
 
         self.messages = self._init_messages()
         if chatbot_config.add_context:
             self.chatbot_context = ChatBotContext(chatbot_config=chatbot_config)
+
+        self.chatbot_post_process = ChatBotPostProcess(
+            chatbot_config=chatbot_config)
 
     def _init_messages(self):
         """Initialize messages
@@ -198,15 +203,43 @@ class ChatBot:
         # Not properly implemented yet.
         return response[0]
 
-    def generate_response(self, message: str=None):
+    def _post_process(self, response: list, context: str=None, 
+                      message: str=None):
+        """To apply post process.
+
+        Args:
+            response (list): list of all responses of the model.
+
+        Returns:
+            list: Apllied post process responses.
+
+        """
+        if len(self.post_process) == 0:
+            return response
+
+        responses = []
+        for post_process_item in self.post_process:
+            responses.append(
+                self.chatbot_post_process.post_process[post_process_item](
+                    prompt=message, context=context, answers=response
+                )
+            )
+        return responses
+
+    def generate_response(self, message: str=None, return_prompt: bool=False,
+                          return_context: bool=False):
         """Function to generate response from model.
 
         Args:
             message (str): Message to get response for.
             add_context (bool): Whether to add context or not.
+            return_prompt (bool): Whether to return prompt or not.
+            return_context (bool): Whether to return context or not.
 
         Returns:
-            str: Generated response.
+            list: Generated response.
+            list: Prompt of request.
+            list: Retrieved context.
 
         Raises:
             ValueError: when message is not provided.
@@ -236,11 +269,24 @@ class ChatBot:
             messages_converted = self._convert_to_prompt_models(messages)
             response = self._prompt_completion(prompt=messages_converted)
 
-        best_response = self._choose_best_response(response)
+        post_process = self._post_process(response=response, context=context, 
+                                          message=message)
+        best_response = self._choose_best_response(post_process)
         
         self.messages = messages
         self.messages.append(
             {"role": "assistant", "content": best_response}
         )
 
-        return response
+        return_tuple = best_response
+
+        if return_prompt or return_context:
+            return_tuple = (return_tuple,)
+
+        if return_prompt:
+            return_tuple += (messages,)
+
+        if return_context:
+            return_tuple += (context,)
+
+        return return_tuple

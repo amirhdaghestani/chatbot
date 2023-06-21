@@ -128,8 +128,10 @@ class ChatBotContext:
             similar_questions_dict)
 
         context_str = ""
-        for similar_questions in similar_questions_dict:
+        for i, similar_questions in enumerate(similar_questions_dict):
             context_str += similar_questions['question'] + "\n"
-            context_str += similar_questions['answer'] + "\n\n"
-        
+            context_str += similar_questions['answer']
+            if i != len(similar_questions_dict) - 1:
+                context_str += "\n\n"
+
         return context_str

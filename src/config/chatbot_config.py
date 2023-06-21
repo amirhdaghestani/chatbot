@@ -63,16 +63,22 @@ class ChatBotConfig:
                         if os.getenv("THRESHOLD_CONTEXT") else 0.5
     num_retrieve_context = int(os.getenv("NUM_RETRIEVE_CONTEXT")) \
                            if os.getenv("NUM_RETRIEVE_CONTEXT") else 10
+    post_process = list(os.getenv("POST_PROCESS")) \
+                   if os.getenv("POST_PROCESS") else []
+    post_process_params = dict(os.getenv("POST_PROCESS_PARAMS")) \
+                          if os.getenv("POST_PROCESS_PARAMS") else {}
     
     def __init__(self, chat_engine: str=None, api_key: str=None,
                  max_tokens: int=None,  num_responses: int=None,
                  stop_by: str=None, temperature: int=None,
                  bot_description: str=None, delim_botdesc: str=None,
                  delim_context: str=None, delim_history: str=None,
-                 prefix_context: str=None, prefix_prompt: str=None, 
-                 suffix_prompt: str=None, add_context: bool=None, 
+                 prefix_context: str=None, prefix_prompt: str=None,
+                 suffix_prompt: str=None, add_context: bool=None,
                  max_history: int=None, threshold_context: float=None,
-                 num_retrieve_context: int=None) -> None:
+                 num_retrieve_context: int=None,
+                 post_process: list=None,
+                 post_process_params: dict=None) -> None:
         """Initializer of class"""
         if chat_engine:
             self.chat_engine = chat_engine
@@ -108,6 +114,10 @@ class ChatBotConfig:
             self.threshold_context = threshold_context
         if num_retrieve_context:
             self.num_retrieve_context = num_retrieve_context
+        if post_process:
+            self.post_process = post_process
+        if post_process_params:
+            self.post_process = post_process_params
 
 def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
                     embedding_model: EmbeddingModel=None, max_history: int=None):
@@ -250,5 +260,9 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.threshold_context = chatbot_config.threshold_context
     if not os.getenv("NUM_RETRIEVE_CONTEXT"):
         cg_to_return.num_retrieve_context = chatbot_config.num_retrieve_context
+    if not os.getenv("POST_PROCESS"):
+        cg_to_return.post_process = chatbot_config.post_process
+    if not os.getenv("POST_PROCESS_PARAMS"):
+        cg_to_return.post_process_params = chatbot_config.post_process_params
 
     return cg_to_return

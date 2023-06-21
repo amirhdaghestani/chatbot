@@ -15,6 +15,7 @@ FINETUNED_MODELS = [
 ]
 
 CHAT_ENGINES = [
+    'gpt-3.5-turbo-prompt-engineering-classifier-response-9-non-chitchat',
     'gpt-3.5-turbo-prompt-engineering',
     'gpt-3.5-turbo',
     'text-davinci-003-prompt-engineering',
@@ -77,6 +78,8 @@ if __name__ == "__main__":
         chat_engine_model = chat_engine[:chat_engine.find("-prompt-engineering")]
         embedding_model = st.selectbox(
             'وکتورایزر جست‌وجوی کانتکست را انتخاب کنید.', tuple(EMBEDDING_MODEL))
+    elif chat_engine.find("-classifier") != -1:
+        chat_engine_model = chat_engine[:chat_engine.find("-classifier")]
     else:
         chat_engine_model = chat_engine
 
@@ -87,6 +90,19 @@ if __name__ == "__main__":
         chatbot_config = get_chat_config(ChatBotModel(chat_engine_model), 
                                         add_context=add_context,
                                         embedding_model=EmbeddingModel(embedding_model))
+        if chat_engine.find("-classifier") != -1:
+            chatbot_config.temperature = 1
+            chatbot_config.num_responses = int(
+                chat_engine[chat_engine.find("response-") + 9:chat_engine.find("response-") + 10])
+            chatbot_config.num_retrieve_context = 5
+            chatbot_config.max_tokens = 512
+            chatbot_config.post_process = [
+                'classification'
+            ]
+            chatbot_config.post_process_params = {
+                'classification_threshold':-0.924
+            }
+
         if chat_engine not in st.session_state:
             st.session_state[chat_engine] = ChatBot(chatbot_config=chatbot_config)
 
@@ -158,7 +174,7 @@ if __name__ == "__main__":
         st.session_state.generated_chat_engine[-1] == 'Example'):
         for i in range(len(st.session_state['generated'])-1, -1, -1):
             if show_chat_engine:
-                message(st.session_state["generated_chat_engine"][i] + ":", 
+                message(st.session_state["generated_chat_engine"][i] + ":",
                         key=str(i) + "_engine")
             message(st.session_state["generated"][i], key=str(i))
             message(st.session_state['past'][i], is_user=True,

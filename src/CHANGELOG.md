@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2023-06-21
+
+### Added
+
+- Added the block of Post-Process.
+- Added the fine-tuned Ada model for classification.
+- Added the classifier to Post-Process block.
+
+
 ## [0.5.1] - 2023-06-5
 
 ### Fix
