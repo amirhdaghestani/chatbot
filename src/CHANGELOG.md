@@ -2,13 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2023-06-21
+
+### Added
+
+- Added GPT-4 and GPT-4-Prompt-Engineering to the models.
+
 ## [0.6.0] - 2023-06-21
 
 ### Added
 
 - Added the block of Post-Process.
 - Added the fine-tuned Ada model for classification.
-- Added the classifier to Post-Process block.
+- Added the Classifier to Post-Process block.
+- Added the model with the Classifier setting:
+    * GPT-Turbo-Prompt-Engineering-Responses-9-Non-ChitChat
 
 
 ## [0.5.1] - 2023-06-5
