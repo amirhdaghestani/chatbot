@@ -102,7 +102,7 @@ class VectorService:
             List: embedding of the input.
 
         """
-        text = self.normalizer(text)
+        text = self.normalize(text)
         if self.model in self.OPENAI_MODELS:
             return self._openai_embeddings(text=text, model=self.model)
         elif self.model in self.TRANSFORMER_MODELS:
