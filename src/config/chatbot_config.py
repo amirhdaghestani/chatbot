@@ -8,6 +8,7 @@ class ChatBotModel(Enum):
     GPT4 = "gpt-4"
     TURBO = "gpt-3.5-turbo"
     DAVINCI = "text-davinci-003"
+    ADACLASSIFIER = "ada:ft-personal:classifier-chitchat-2023-07-08-11-00-41"
     DAVINCIFAQ = "davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45"
     DAVINCIFAQ4 = "davinci:ft-personal:faq-2023-05-07-05-25-57"
     DAVINCIRBT = "davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56"
@@ -146,11 +147,11 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n###\n\n"
         chatbot_config.delim_context = ""
-        chatbot_config.prefix_context = "Context:\n"
+        chatbot_config.prefix_context = "کانتکست:\n"
         chatbot_config.prefix_prompt = ""
         chatbot_config.suffix_prompt = ""
         if chatbot_config.add_context:
-            chatbot_config.temperature = 0
+            chatbot_config.temperature = 0.15
         else:
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
@@ -216,6 +217,22 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nربات:"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
+        chatbot_config.threshold_context = 0.5
+        chatbot_config.num_retrieve_context = 1
+
+    elif chat_engine == ChatBotModel.ADACLASSIFIER:
+        chatbot_config.bot_description = ""
+        chatbot_config.max_tokens = 1
+        chatbot_config.num_responses = 1
+        chatbot_config.delim_botdesc = ""
+        chatbot_config.delim_context = ""
+        chatbot_config.delim_context = ""
+        chatbot_config.stop_by = ["\n"]
+        chatbot_config.prefix_context = ""
+        chatbot_config.prefix_prompt = ""
+        chatbot_config.suffix_prompt = " ->"
+        chatbot_config.temperature = 0
+        chatbot_config.max_history = 1
         chatbot_config.threshold_context = 0.5
         chatbot_config.num_retrieve_context = 1
 

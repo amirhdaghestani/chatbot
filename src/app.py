@@ -20,6 +20,7 @@ CHAT_ENGINES = [
     'gpt-3.5-turbo-prompt-engineering-classifier-response-9-non-chitchat',
     'gpt-3.5-turbo-prompt-engineering',
     'gpt-3.5-turbo',
+    'ada:ft-personal:classifier-chitchat-2023-07-08-11-00-41',
     'text-davinci-003-prompt-engineering',
     'text-davinci-003',
     'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45-prompt-engineering',
@@ -57,7 +58,16 @@ if __name__ == "__main__":
         "توسط امیرحسین داغستانی توسعه یافته است."
     }
     st.set_page_config(page_title='ربات هوشمند همراه', page_icon=img, menu_items=menu_items)
-    st.title(f"ربات هوشمند پشتیبانی همراه اول 🤖")
+    st.title("🤖 ربات هوشمند همراه اول")
+
+    # st.markdown("""
+    # <style>
+    # p, div, input, label {
+    # direction: RTL;
+    # text-align: right;
+    # }
+    # </style>
+    # """, unsafe_allow_html=True)
         
     if 'generated_chat_engine' not in st.session_state:
         st.session_state['generated_chat_engine'] = []
@@ -148,9 +158,8 @@ if __name__ == "__main__":
     # Getting user input
     def get_text():
         """Get the input text from user"""
-        input_text = st.text_input(
-            label=":شما",
-            placeholder="به عنوان مثال: سلام، تو کی هستی؟ یا چطور میتونم ازت کمک بگیرم؟",
+        input_text = st.chat_input(
+            placeholder="به عنوان مثال: سلام، تو کی هستی؟",
             key="input")
         return input_text
     
@@ -164,6 +173,8 @@ if __name__ == "__main__":
     if user_input:
         with st.spinner("لطفاً منتظر بمانید ..."):
             output = chatbot.generate_response(user_input)
+            output = output.replace("\n", "  \n")
+            output = output.replace("*", "\*")
             st.session_state.generated_chat_engine.append(chat_engine)
             # store the output
             st.session_state.past.append(user_input)
@@ -172,10 +183,13 @@ if __name__ == "__main__":
     if st.session_state['generated'] or \
        (len(st.session_state.generated_chat_engine) > 0 and \
         st.session_state.generated_chat_engine[-1] == 'Example'):
-        for i in range(len(st.session_state['generated'])-1, -1, -1):
-            if show_chat_engine:
-                message(st.session_state["generated_chat_engine"][i] + ":",
-                        key=str(i) + "_engine")
-            message(st.session_state["generated"][i], key=str(i))
-            message(st.session_state['past'][i], is_user=True,
-                    key=str(i) + '_user')
+        for i in range(len(st.session_state['generated'])):
+            with st.chat_message("user"):
+                st.write(st.session_state['past'][i], key=str(i) + '_user')
+
+            
+            with st.chat_message("assistant"):
+                if show_chat_engine:
+                    st.write(st.session_state["generated_chat_engine"][i] + ":",
+                            key=str(i) + "_engine")
+                st.write(st.session_state["generated"][i], key=str(i))
