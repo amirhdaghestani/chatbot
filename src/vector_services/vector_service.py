@@ -1,12 +1,14 @@
 """This module implements vector service to extract embeddings from raw text"""
 import time
-import numpy as np
 
+import numpy as np
 import openai
+import hazm
+from transformers import AutoTokenizer, AutoModel
+
 from config.vector_config import VectorConfig
 from config.vector_config import EmbeddingModel
 
-from transformers import AutoTokenizer, AutoModel
 
 class VectorService:
     """The class to vectorize input text"""
@@ -36,7 +38,7 @@ class VectorService:
                 "Provide vector_service_config when initializing class.")
         
         self.model = vector_service_config.model
-        
+        self.normalizer = hazm.Normalizer()
 
         if self.model in self.OPENAI_MODELS:
             openai.api_key = vector_service_config.api_key
@@ -100,6 +102,7 @@ class VectorService:
             List: embedding of the input.
 
         """
+        text = self.normalizer(text)
         if self.model in self.OPENAI_MODELS:
             return self._openai_embeddings(text=text, model=self.model)
         elif self.model in self.TRANSFORMER_MODELS:
