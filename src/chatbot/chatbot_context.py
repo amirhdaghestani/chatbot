@@ -7,6 +7,7 @@ from config.chatbot_config import EmbeddingModel
 from config.chatbot_config import ChatBotConfig
 from faiss_services.faiss_service import FaissService
 from vector_services.vector_service import VectorService
+from normalizer.normalizer import Normalizer
 
 
 class ChatBotContext:
@@ -22,6 +23,7 @@ class ChatBotContext:
             None.
 
         """
+        self.normalizer = Normalizer()
         self.faiss_config, self.vector_config = self._get_config(chatbot_config)
 
         self.faiss_service = FaissService(self.faiss_config)
@@ -118,7 +120,7 @@ class ChatBotContext:
             str: Generated context.
         
         """
-
+        text = self.normalizer.process(text)
         embedding = self._vectorize(text)
         similar_questions_dict = self._search_similar_questions(
             embedding, 

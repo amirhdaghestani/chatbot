@@ -6,3 +6,4 @@ faiss-cpu
 transformers
 tiktoken
 hazm
+num2words

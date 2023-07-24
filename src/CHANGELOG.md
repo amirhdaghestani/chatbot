@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1] - 2023-07-23
+
+## Added
+
+- Added Normalizer.
+
+### Updated
+
+- User Interface.
+- Knowledge Base with new information.
+
 ## [0.7.0] - 2023-07-9
 
 ### Added
