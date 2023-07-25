@@ -2,16 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.1] - 2023-07-23
+## [0.8.0] - 2023-07-23
 
 ## Added
 
+- Elasticsearch module.
+- Added Query Expansion.
 - Added Normalizer.
+- Added Zeroshot support.
 
 ### Updated
 
-- User Interface.
 - Knowledge Base with new information.
+- User Interface.
+
 
 ## [0.7.0] - 2023-07-9
 
