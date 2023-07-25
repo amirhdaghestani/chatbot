@@ -62,13 +62,14 @@ class ChatBot:
         self.prefix_prompt = chatbot_config.prefix_prompt
         self.suffix_prompt = chatbot_config.suffix_prompt
         self.add_context = chatbot_config.add_context
+        self.add_zeroshot = chatbot_config.add_zeroshot
         self.max_history = chatbot_config.max_history
         self.threshold_context_vector = chatbot_config.threshold_context_vector
         self.threshold_context_elastic = chatbot_config.threshold_context_elastic
         self.num_retrieve_context = chatbot_config.num_retrieve_context
         self.post_process = chatbot_config.post_process
 
-        self.messages = self._init_messages()
+        self.messages, self.index_start_conversation = self._init_messages()
         if chatbot_config.add_context:
             self.chatbot_context = ChatBotContext(chatbot_config=chatbot_config)
 
@@ -82,10 +83,19 @@ class ChatBot:
             list: messages list.
 
         """
+        zero_shot_sample = [
+            {"role": "user", "content": "سلام چطور میتونی کمکم کنی؟"},
+            {"role": "assistant", "content": "سلام. من به عنوان ربات هوشمند پشتیبانی شرکت همراه اول، میتوانم در مورد سوالات مربوط به خدمات و محصولات همراه اول، راهنمایی کنم. از جمله اطلاعات در مورد بسته های اینترنتی، تعرفه ها، خدمات پس از فروش و غیره. لطفا سوال خود را بپرسید تا بتوانم به شما کمک کنم."},
+            {"role": "user", "content": "میتونی آواز بخونی؟"},
+            {"role": "assistant", "content": "متاسفانه من به عنوان یک ربات پشتیبانی، قابلیت خواندن آواز را ندارم. من تنها برای پاسخگویی به سوالات شما در مورد خدمات و محصولات همراه اول طراحی شده ام."}
+        ]
         messages = [
             {"role": "system", "content": self.bot_description}
         ]
-        return messages
+        if self.add_zeroshot:
+            messages.extend(zero_shot_sample)
+
+        return messages, len(messages)
 
     def _chat_completion(self, message: str=None):
         """Function to call chat completion from openai.
@@ -251,9 +261,9 @@ class ChatBot:
             self.logger.error("message is None.")
             raise ValueError("Provide message when calling this function.")
 
-        if len(self.messages) > 2 * self.max_history:
-            del self.messages[1]
-            del self.messages[1]
+        if len(self.messages) > 2 * self.max_history + self.index_start_conversation:
+            del self.messages[self.index_start_conversation]
+            del self.messages[self.index_start_conversation]
 
         context = None
         if self.add_context:

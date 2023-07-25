@@ -57,6 +57,8 @@ class ChatBotConfig:
                     if os.getenv("PREFIX_PROMPT") else "\nAgent:"
     add_context = bool(os.getenv("ADD_CONTEXT")) \
                   if os.getenv("ADD_CONTEXT") else False
+    add_zeroshot = bool(os.getenv("ADD_ZEROSHOT")) \
+                   if os.getenv("ADD_ZEROSHOT") else False
     embedding_model = EmbeddingModel(os.getenv("EMBEDDING_MODEL")) \
                       if os.getenv("EMBEDDING_MODEL") else EmbeddingModel.ZIBERT
     max_history = int(os.getenv("MAX_HISTORY")) \
@@ -72,7 +74,7 @@ class ChatBotConfig:
                    if os.getenv("POST_PROCESS") else []
     post_process_params = json.loads(os.getenv("POST_PROCESS_PARAMS")) \
                           if os.getenv("POST_PROCESS_PARAMS") else {}
-    
+
     def __init__(self, chat_engine: str=None, api_key: str=None,
                  max_tokens: int=None,  num_responses: int=None,
                  stop_by: str=None, temperature: int=None,
@@ -80,12 +82,12 @@ class ChatBotConfig:
                  delim_context: str=None, delim_history: str=None,
                  prefix_context: str=None, prefix_prompt: str=None,
                  suffix_prompt: str=None, add_context: bool=None,
-                 max_history: int=None, threshold_context_vector: float=None,
+                 add_zeroshot: bool=None, max_history: int=None,
+                 threshold_context_vector: float=None,
                  threshold_context_elastic: float=None,
                  num_retrieve_context: int=None,
                  post_process: list=None,
-                 post_process_params: dict=None,
-                 retrieve_ratio: dict=None) -> None:
+                 post_process_params: dict=None) -> None:
         """Initializer of class"""
         if chat_engine:
             self.chat_engine = chat_engine
@@ -113,6 +115,8 @@ class ChatBotConfig:
             self.suffix_prompt = suffix_prompt
         if add_context:
             self.add_context = add_context
+        if add_zeroshot:
+            self.add_zeroshot = add_zeroshot
         if max_history:
             self.max_history = max_history
         if delim_history:
@@ -166,6 +170,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
         chatbot_config.num_retrieve_context = {"vector": 5, "elastic": 5}
+        chatbot_config.add_zeroshot = True
 
     if chat_engine == ChatBotModel.TURBO:
         chatbot_config.max_tokens = 512
@@ -181,6 +186,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
         chatbot_config.num_retrieve_context = {"vector": 3, "elastic": 2}
+        chatbot_config.add_zeroshot = False
     
     elif chat_engine == ChatBotModel.DAVINCI:
         chatbot_config.max_tokens = 512
@@ -197,6 +203,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
         chatbot_config.num_retrieve_context = {"vector": 1}
+        chatbot_config.add_zeroshot = False
 
     elif chat_engine == ChatBotModel.DAVINCIFAQ \
         or chat_engine == ChatBotModel.DAVINCIFAQ4:
@@ -212,6 +219,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
         chatbot_config.num_retrieve_context = {"vector": 1}
+        chatbot_config.add_zeroshot = False
 
     elif chat_engine == ChatBotModel.DAVINCIRBT:
         chatbot_config.max_tokens = 512
@@ -225,6 +233,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
         chatbot_config.num_retrieve_context = {"vector": 1}
+        chatbot_config.add_zeroshot = False
     
     elif chat_engine == ChatBotModel.DAVINCICHAT:
         chatbot_config.max_tokens = 512
@@ -239,6 +248,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
         chatbot_config.num_retrieve_context = {"vector": 1}
+        chatbot_config.add_zeroshot = False
 
     elif chat_engine == ChatBotModel.ADACLASSIFIER:
         chatbot_config.bot_description = ""
@@ -254,6 +264,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.temperature = 0
         chatbot_config.max_history = 1
         chatbot_config.num_retrieve_context = {"vector": 1}
+        chatbot_config.add_zeroshot = False
 
     # To overwrite
     if max_history is not None:
@@ -288,6 +299,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.temperature = chatbot_config.temperature
     if not os.getenv("ADD_CONTEXT"):
         cg_to_return.add_context = chatbot_config.add_context
+    if not os.getenv("ADD_ZEROSHOT"):
+        cg_to_return.add_zeroshot = chatbot_config.add_zeroshot
     if not os.getenv("EMBEDDING_MODEL"):
         cg_to_return.embedding_model = chatbot_config.embedding_model
     if not os.getenv("MAX_HISTORY"):
