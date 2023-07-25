@@ -4,8 +4,13 @@ import re
 import hazm
 from num2words import num2words
 
+from logger.ve_logger import VeLogger
 
 class Normalizer:
+    """Normalizer and Expansion class"""
+
+    # Initialize logger
+    logger = VeLogger()
 
     def __init__(self) -> None:
         """Initializer of Normalizer"""

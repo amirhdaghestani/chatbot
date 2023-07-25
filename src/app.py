@@ -1,5 +1,6 @@
 """Main module"""
 from PIL import Image
+import base64
 import random
 
 import pandas as pd
@@ -20,7 +21,7 @@ CHAT_ENGINES = [
     'gpt-3.5-turbo-prompt-engineering-classifier-response-9-non-chitchat',
     'gpt-3.5-turbo-prompt-engineering',
     'gpt-3.5-turbo',
-    'ada:ft-personal:classifier-chitchat-2023-07-08-11-00-41',
+    # 'ada:ft-personal:classifier-chitchat-2023-07-08-11-00-41',
     'text-davinci-003-prompt-engineering',
     'text-davinci-003',
     'davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45-prompt-engineering',
@@ -51,7 +52,11 @@ if __name__ == "__main__":
         st.session_state['question_list'] = question_list
 
     # Creating the chatbot interface
-    img = Image.open("resources/favicon.png")
+    img = Image.open("resources/img/favicon.png")
+    with open("resources/img/wait.gif", "rb") as file:
+        contents = file.read()
+        img_wait = base64.b64encode(contents).decode("utf-8")
+
     menu_items = {
         'About': "## ربات هوشمند پشتیبانی همراه اول \n " \
         "این ربات از شبکه جی‌پی‌تی ۳.۵ قدرت گرفته است و " \
@@ -60,14 +65,14 @@ if __name__ == "__main__":
     st.set_page_config(page_title='ربات هوشمند همراه', page_icon=img, menu_items=menu_items)
     st.title("🤖 ربات هوشمند همراه اول")
 
-    # st.markdown("""
-    # <style>
-    # p, div, input, label {
-    # direction: RTL;
-    # text-align: right;
-    # }
-    # </style>
-    # """, unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+    p, div, input, label {
+    direction: RTL;
+    text-align: right;
+    }
+    </style>
+    """, unsafe_allow_html=True)
         
     if 'generated_chat_engine' not in st.session_state:
         st.session_state['generated_chat_engine'] = []
@@ -95,7 +100,7 @@ if __name__ == "__main__":
 
     if add_context:
         chat_engine += "-" + embedding_model
-    
+
     with st.spinner("لطفاً منتظر بمانید ..."):
         chatbot_config = get_chat_config(ChatBotModel(chat_engine_model), 
                                         add_context=add_context,
@@ -170,26 +175,39 @@ if __name__ == "__main__":
     if flag_is_button_pressed:
         user_input = example_question
 
-    if user_input:
-        with st.spinner("لطفاً منتظر بمانید ..."):
-            output = chatbot.generate_response(user_input)
-            output = output.replace("\n", "  \n")
-            output = output.replace("*", "\*")
-            st.session_state.generated_chat_engine.append(chat_engine)
-            # store the output
-            st.session_state.past.append(user_input)
-            st.session_state.generated.append(output)
-
     if st.session_state['generated'] or \
        (len(st.session_state.generated_chat_engine) > 0 and \
         st.session_state.generated_chat_engine[-1] == 'Example'):
         for i in range(len(st.session_state['generated'])):
             with st.chat_message("user"):
-                st.write(st.session_state['past'][i], key=str(i) + '_user')
+                st.write(st.session_state['past'][i])
 
-            
             with st.chat_message("assistant"):
                 if show_chat_engine:
-                    st.write(st.session_state["generated_chat_engine"][i] + ":",
-                            key=str(i) + "_engine")
-                st.write(st.session_state["generated"][i], key=str(i))
+                    st.write(st.session_state["generated_chat_engine"][i] + ":")
+                st.write(st.session_state["generated"][i])
+
+
+    if user_input:
+        with st.chat_message("user"):
+            st.write(user_input)
+
+        with st.chat_message("assistant"):
+            wait_placeholder = st.empty()
+            wait_placeholder.markdown(
+                f'<img src="data:image/gif;base64,{img_wait}" alt="wait gif" width="40px">',
+                unsafe_allow_html=True,
+            )
+            output = chatbot.generate_response(user_input)
+            output = output.replace("\n", "  \n")
+            output = output.replace("*", "\*")
+            wait_placeholder.empty()
+            message_to_print = output
+            if show_chat_engine:
+                message_to_print = (chat_engine + ":") + "  \n" + message_to_print
+            wait_placeholder.write(message_to_print)
+
+        # store the output
+        st.session_state.generated_chat_engine.append(chat_engine)
+        st.session_state.past.append(user_input)
+        st.session_state.generated.append(output)

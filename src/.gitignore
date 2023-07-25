@@ -2,6 +2,7 @@
 /resources_backup
 /resources/RBT_questions_not_in_train.csv
 test_vector.ipynb
+*.env
 
 # VSCode
 .vscode

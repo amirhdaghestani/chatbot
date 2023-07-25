@@ -1,0 +1,29 @@
+version: '3.3'
+
+services:
+  chatbot-app:
+    build: .
+    image: chatbot:v0.7.1
+    container_name: chatbot
+    env_file:
+      - chatbot.env
+    depends_on:
+      - elasticsearch
+    volumes:
+      - .:/app
+    networks:
+      - chatbot-network
+
+  elasticsearch:
+    image: elasticsearch:8.8.1
+    container_name: elasticsearch
+    env_file:
+      - elasticsearch.env
+    volumes:
+      - ./resources/elasticsearch/data/:/usr/share/elasticsearch/data
+    networks:
+      - chatbot-network
+
+networks:
+  chatbot-network:
+    driver: bridge

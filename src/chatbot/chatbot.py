@@ -63,7 +63,8 @@ class ChatBot:
         self.suffix_prompt = chatbot_config.suffix_prompt
         self.add_context = chatbot_config.add_context
         self.max_history = chatbot_config.max_history
-        self.threshold_context = chatbot_config.threshold_context
+        self.threshold_context_vector = chatbot_config.threshold_context_vector
+        self.threshold_context_elastic = chatbot_config.threshold_context_elastic
         self.num_retrieve_context = chatbot_config.num_retrieve_context
         self.post_process = chatbot_config.post_process
 
@@ -259,7 +260,8 @@ class ChatBot:
             context = self.chatbot_context.get_context(
                 message,
                 num_retrieve=self.num_retrieve_context,
-                threshold=self.threshold_context)
+                threshold_vector=self.threshold_context_vector,
+                threshold_elastic=self.threshold_context_elastic)
 
         messages = self._create_prompt(message=message, context=context)
 

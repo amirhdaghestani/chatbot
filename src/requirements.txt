@@ -7,3 +7,4 @@ transformers
 tiktoken
 hazm
 num2words
+elasticsearch

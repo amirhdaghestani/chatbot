@@ -1,5 +1,6 @@
 """This module contains necessary configs for chatbot"""
 import os
+import json
 from enum import Enum
 
 from config.vector_config import EmbeddingModel
@@ -60,13 +61,16 @@ class ChatBotConfig:
                       if os.getenv("EMBEDDING_MODEL") else EmbeddingModel.ZIBERT
     max_history = int(os.getenv("MAX_HISTORY")) \
                    if os.getenv("MAX_HISTORY") else 5
-    threshold_context = float(os.getenv("THRESHOLD_CONTEXT")) \
-                        if os.getenv("THRESHOLD_CONTEXT") else 0.5
-    num_retrieve_context = int(os.getenv("NUM_RETRIEVE_CONTEXT")) \
-                           if os.getenv("NUM_RETRIEVE_CONTEXT") else 10
+    threshold_context_vector = float(os.getenv("THRESHOLD_CONTEXT_VECTOR")) \
+                               if os.getenv("THRESHOLD_CONTEXT_VECTOR") else 0.5
+    threshold_context_elastic = float(os.getenv("THRESHOLD_CONTEXT_ELASTIC")) \
+                                if os.getenv("THRESHOLD_CONTEXT_ELASTIC") else 0
+    num_retrieve_context = json.loads(os.getenv("NUM_RETRIEVE_CONTEXT")) \
+                           if os.getenv("NUM_RETRIEVE_CONTEXT") \
+                           else {"vector": 5, "elastic": 5}
     post_process = list(os.getenv("POST_PROCESS")) \
                    if os.getenv("POST_PROCESS") else []
-    post_process_params = dict(os.getenv("POST_PROCESS_PARAMS")) \
+    post_process_params = json.loads(os.getenv("POST_PROCESS_PARAMS")) \
                           if os.getenv("POST_PROCESS_PARAMS") else {}
     
     def __init__(self, chat_engine: str=None, api_key: str=None,
@@ -76,10 +80,12 @@ class ChatBotConfig:
                  delim_context: str=None, delim_history: str=None,
                  prefix_context: str=None, prefix_prompt: str=None,
                  suffix_prompt: str=None, add_context: bool=None,
-                 max_history: int=None, threshold_context: float=None,
+                 max_history: int=None, threshold_context_vector: float=None,
+                 threshold_context_elastic: float=None,
                  num_retrieve_context: int=None,
                  post_process: list=None,
-                 post_process_params: dict=None) -> None:
+                 post_process_params: dict=None,
+                 retrieve_ratio: dict=None) -> None:
         """Initializer of class"""
         if chat_engine:
             self.chat_engine = chat_engine
@@ -111,8 +117,10 @@ class ChatBotConfig:
             self.max_history = max_history
         if delim_history:
             self.delim_history = delim_history
-        if threshold_context:
-            self.threshold_context = threshold_context
+        if threshold_context_vector:
+            self.threshold_context_vector = threshold_context_vector
+        if threshold_context_elastic:
+            self.threshold_context_elastic = threshold_context_elastic
         if num_retrieve_context:
             self.num_retrieve_context = num_retrieve_context
         if post_process:
@@ -140,9 +148,11 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         "بیا مرحله به مرحله فکر کنیم. لطفاَ تنها با اطلاعات ارائه شده در کانتکست پاسخ سوال را بده. " \
         "اگر پاسخ سوال در داخل کانتکست ارائه نشده بود بگو متاسفانه پاسخ سوال شما را نمیدانم."
     )
+    chatbot_config.threshold_context_vector = 0.5
+    chatbot_config.threshold_context_elastic = 0
 
     # Exclusive configs
-    if chat_engine == ChatBotModel.GPT4 or chat_engine == ChatBotModel.TURBO:
+    if chat_engine == ChatBotModel.GPT4:
         chatbot_config.max_tokens = 512
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n###\n\n"
@@ -155,8 +165,22 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         else:
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.5
-        chatbot_config.num_retrieve_context = 5
+        chatbot_config.num_retrieve_context = {"vector": 5, "elastic": 5}
+
+    if chat_engine == ChatBotModel.TURBO:
+        chatbot_config.max_tokens = 512
+        chatbot_config.num_responses = 1
+        chatbot_config.delim_botdesc = "\n\n###\n\n"
+        chatbot_config.delim_context = ""
+        chatbot_config.prefix_context = "کانتکست:\n"
+        chatbot_config.prefix_prompt = ""
+        chatbot_config.suffix_prompt = ""
+        if chatbot_config.add_context:
+            chatbot_config.temperature = 0.15
+        else:
+            chatbot_config.temperature = 0.3
+        chatbot_config.max_history = 2
+        chatbot_config.num_retrieve_context = {"vector": 3, "elastic": 2}
     
     elif chat_engine == ChatBotModel.DAVINCI:
         chatbot_config.max_tokens = 512
@@ -172,8 +196,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         else:
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.5
-        chatbot_config.num_retrieve_context = 1
+        chatbot_config.num_retrieve_context = {"vector": 1}
 
     elif chat_engine == ChatBotModel.DAVINCIFAQ \
         or chat_engine == ChatBotModel.DAVINCIFAQ4:
@@ -188,8 +211,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAgent:"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.5
-        chatbot_config.num_retrieve_context = 1
+        chatbot_config.num_retrieve_context = {"vector": 1}
 
     elif chat_engine == ChatBotModel.DAVINCIRBT:
         chatbot_config.max_tokens = 512
@@ -202,8 +224,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAgent: "
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.5
-        chatbot_config.num_retrieve_context = 1
+        chatbot_config.num_retrieve_context = {"vector": 1}
     
     elif chat_engine == ChatBotModel.DAVINCICHAT:
         chatbot_config.max_tokens = 512
@@ -217,8 +238,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nربات:"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
-        chatbot_config.threshold_context = 0.5
-        chatbot_config.num_retrieve_context = 1
+        chatbot_config.num_retrieve_context = {"vector": 1}
 
     elif chat_engine == ChatBotModel.ADACLASSIFIER:
         chatbot_config.bot_description = ""
@@ -233,8 +253,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = " ->"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 1
-        chatbot_config.threshold_context = 0.5
-        chatbot_config.num_retrieve_context = 1
+        chatbot_config.num_retrieve_context = {"vector": 1}
 
     # To overwrite
     if max_history is not None:
@@ -273,8 +292,10 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.embedding_model = chatbot_config.embedding_model
     if not os.getenv("MAX_HISTORY"):
         cg_to_return.max_history = chatbot_config.max_history
-    if not os.getenv("THRESHOLD_CONTEXT"):
-        cg_to_return.threshold_context = chatbot_config.threshold_context
+    if not os.getenv("THRESHOLD_CONTEXT_VECTOR"):
+        cg_to_return.threshold_context_vector = chatbot_config.threshold_context_vector
+    if not os.getenv("THRESHOLD_CONTEXT_ELASTIC"):
+        cg_to_return.threshold_context_elastic = chatbot_config.threshold_context_elastic
     if not os.getenv("NUM_RETRIEVE_CONTEXT"):
         cg_to_return.num_retrieve_context = chatbot_config.num_retrieve_context
     if not os.getenv("POST_PROCESS"):
