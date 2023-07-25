@@ -48,7 +48,9 @@ class ElasticService:
         """
         es = Elasticsearch([{'host': self.elastic_config.host, 
                              'port': self.elastic_config.port, 
-                             "scheme": self.elastic_config.scheme}])
+                             "scheme": self.elastic_config.scheme}],
+                             basic_auth=(self.elastic_config.username,
+                                         self.elastic_config.password))
         return es
 
     def _initialize(self, es: Elasticsearch) -> None:
