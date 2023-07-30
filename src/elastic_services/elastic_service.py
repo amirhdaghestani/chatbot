@@ -78,7 +78,7 @@ class ElasticService:
         #     }
         #     # index the document
         #     es.index(index=self.elastic_config.index_name, body=doc)
-        
+
         database = database.set_index(self.elastic_config.query_id_key)
         return database
 
@@ -95,12 +95,15 @@ class ElasticService:
         # define the search query
         query = {         
             'match': {            
-                self.elastic_config.query_key: text
+                self.elastic_config.query_key: {
+                    "query": text,
+                    "fuzziness": self.elastic_config.fuzziness
+                }
             }
         }
 
         # search for documents
-        result = self.es.search(index=self.elastic_config.index_name, query=query, 
+        result = self.es.search(index=self.elastic_config.index_name, query=query,
                                 size=num_retrieve)
 
         query_list = []
