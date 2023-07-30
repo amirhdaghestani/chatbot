@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.8.0] - 2023-07-23
+## [0.8.1] - 2023-07-30
+
+### Updated
+
+- Query Expansion with word expansion.
+- Elasticsearch search method via fuzzy search.
+
+
+## [0.8.0] - 2023-07-26
 
 ## Added
 
@@ -22,6 +30,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Added GPT-4 and GPT-4-Prompt-Engineering to the models.
+
 
 ## [0.6.0] - 2023-06-21
 
@@ -48,6 +57,7 @@ All notable changes to this project will be documented in this file.
 
 - GPT-4 due to API unavailability.
 
+
 ## [0.5.0] - 2023-05-22
 
 ### Added
@@ -70,6 +80,7 @@ All notable changes to this project will be documented in this file.
 - Refactored the code
 - Changed the default message handler to chat format.
 
+
 ## [0.4.0] - 2023-05-14
 
 ### Changed
@@ -82,12 +93,14 @@ All notable changes to this project will be documented in this file.
     * Finetuned GPT davinci on FAQ 9 Epochs (davinci:ft-personal:faq-9epoch-2023-05-13-17-23-45)
     * Finetuned GPT davinci on Chat dataset (davinci:ft-personal:chat-2023-05-13-20-08-50)
 
+
 ## [0.3.0] - 2023-05-08
 
 ### Added
 
 - Added support of additional models:
     * Finetuned GPT davinci on FAQ (davinci:ft-personal:faq-2023-05-07-05-25-57)
+
 
 ## [0.2.0] - 2023-05-01
 
@@ -100,6 +113,7 @@ All notable changes to this project will be documented in this file.
     * Finetuned GPT davinci on RBT Questions 
     (davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56)
 - Added default questions with answers from database for finetune models.
+
 
 ## [0.1.0] - 2023-04-22
 
