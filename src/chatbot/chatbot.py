@@ -45,7 +45,7 @@ class ChatBot:
             self.logger.error("API key is None.")
             raise ValueError(
                 "Provide API key when initializing class. You can set the " \
-                "enviroment variable `OpenAI_API_KEY` to your API key.")
+                "enviroment variable `OPENAI_API_KEY` to your API key.")
 
         # Set OpenAI API key and variables
         openai.api_key = chatbot_config.api_key

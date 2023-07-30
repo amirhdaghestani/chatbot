@@ -109,7 +109,6 @@ if __name__ == "__main__":
             chatbot_config.temperature = 1
             chatbot_config.num_responses = int(
                 chat_engine[chat_engine.find("response-") + 9:chat_engine.find("response-") + 10])
-            chatbot_config.num_retrieve_context = 5
             chatbot_config.max_tokens = 512
             chatbot_config.post_process = [
                 'classification'

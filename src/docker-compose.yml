@@ -3,7 +3,7 @@ version: '3.3'
 services:
   chatbot-app:
     build: .
-    image: chatbot:v0.7.1
+    image: chatbot:v0.8.0
     container_name: chatbot
     env_file:
       - chatbot.env

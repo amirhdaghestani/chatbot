@@ -47,7 +47,7 @@ class Normalizer:
         return word
 
     def expansion(self, text: str) -> str:
-        numbers_in_text = set([e for e in re.findall(r'[\d\.\d]+', text) if e != "."])
+        numbers_in_text = set([e for e in re.findall(r'[\d\.\d]+', text) if e != "." and e.count(".") <= 1])
         
         for number in numbers_in_text:
             text = text.replace(f" {number} ", f" {number} ({self._num2word(float(number))}) ")
