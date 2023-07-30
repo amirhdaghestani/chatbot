@@ -41,5 +41,5 @@ class ElasticConfig:
                if os.getenv("ELASTIC_USERNAME") else ""
     password = str(os.getenv("ELASTIC_PASSWORD")) \
                if os.getenv("ELASTIC_PASSWORD") else ""
-    fuziness = str(os.getenv("ELASTIC_FUZINESS")) \
-               if os.getenv("ELASTIC_FUZINESS") else 'AUTO'
+    fuzziness = str(os.getenv("ELASTIC_FUZZINESS")) \
+               if os.getenv("ELASTIC_FUZZINESS") else 'AUTO'
