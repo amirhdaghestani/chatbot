@@ -6,11 +6,16 @@ from num2words import num2words
 
 from logger.ve_logger import VeLogger
 
+
 class Normalizer:
     """Normalizer and Expansion class"""
 
     # Initialize logger
     logger = VeLogger()
+
+    WORD_EXPANSION = {
+        "گیگ": "گیگابایت"
+    }
 
     def __init__(self) -> None:
         """Initializer of Normalizer"""
@@ -43,19 +48,61 @@ class Normalizer:
 
         for i in range(max_num):
             word.append(self._num2word(i))
-        
+
         return word
 
-    def expansion(self, text: str) -> str:
-        numbers_in_text = set([e for e in re.findall(r'[\d\.\d]+', text) if e != "." and e.count(".") <= 1])
-        
+    def _num_expansion(self, text: str) -> str:
+        """Expand numbers into words and vice versa.
+
+        Args:
+            text (str): Input string.
+
+        Returns:
+            str: Expanded text.
+
+        """
+        numbers_in_text = set([e for e in re.findall(r'[\d\.\d]+', text) \
+                               if e != "." and e.count(".") <= 1])
+
         for number in numbers_in_text:
             text = text.replace(f" {number} ", f" {number} ({self._num2word(float(number))}) ")
-        
+
         for i, word in enumerate(self.num_word):
             text = text.replace(f" {word} ", f" {word} ({i}) ")
-        
+
         return text
+
+    def _word_expansion(self, text: str) -> str:
+        """Expand words.
+
+        Args:
+            text (str): Input string.
+
+        Returns:
+            str: Expanded text.
+
+        """
+
+        for word, replace in self.WORD_EXPANSION.items():
+            text = text.replace(f" {word} ", f" {replace} ")
+
+        return text
+
+    def expansion(self, text: str) -> str:
+        """Expand the input text.
+
+        Args:
+            text (str): Input string.
+
+        Returns:
+            str: Expanded text.
+
+        """
+        text = self._num_expansion(text=text)
+        text = self._word_expansion(text=text)
+
+        return text
+
 
     def normalize(self, text: str) -> str:
         """Normalize input text.
@@ -67,7 +114,7 @@ class Normalizer:
             str: Normalized input text
         """
         return self.norm.normalize(text)
-    
+
     def process(self, text: str) -> str:
         """Expand and normalize query.
         
@@ -78,6 +125,7 @@ class Normalizer:
             str: Expanded and normalized query.
 
         """
+        text = " " + text + " "
         text = self.expansion(text)
         text = self.normalize(text)
 
