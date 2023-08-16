@@ -301,7 +301,9 @@ class ChatBotContext:
             num_retrieve=num_retrieve['total_num'] * 10,
             threshold=threshold_elastic)
 
-        def normalize_scores(results_dict: dict):
+        def normalize_scores(results_dict: list):
+            if len(results_dict) == 0:
+                return results_dict
             scores = [e['score'] for e in results_dict]
             max_score = max(scores)
             for result in results_dict:
@@ -432,20 +434,6 @@ class ChatBotContext:
             text=text,
             retrieve_context_method=retrieve_context_method,
             num_retrieve=num_retrieve,
-            threshold_vector=threshold_vector,
-            threshold_elastic=threshold_elastic)
-
-        similar_questions_dict_boost = self._get_similar_questions(
-            text=text,
-            retrieve_context_method="boost",
-            num_retrieve={'vector':0.5, 'elastic':0.5, 'total_num': 10},
-            threshold_vector=threshold_vector,
-            threshold_elastic=threshold_elastic)
-        
-        similar_questions_dict_combined = self._get_similar_questions(
-            text=text,
-            retrieve_context_method="combine",
-            num_retrieve={'vector':5, 'elastic':5},
             threshold_vector=threshold_vector,
             threshold_elastic=threshold_elastic)
 
