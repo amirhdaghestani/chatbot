@@ -31,6 +31,7 @@ class ChatBotContext:
             self._get_config(chatbot_config)
         )
         self.num_retrieve_context = chatbot_config.num_retrieve_context
+        self.retrieve_context_method = chatbot_config.retrieve_context_method
 
         self.faiss_service = FaissService(self.faiss_config)
         self.vector_service = VectorService(self.vector_config)
@@ -173,15 +174,80 @@ class ChatBotContext:
             index_elastic += 1
         
         return similar_questions_dict
+    
+    def _boost_similar_questions(self, vector_list: List, elastic_list: List,
+                                 num_retrieve: dict) -> List:
+        """Mix two lists with boost.
+        
+        Args:
+            elastic_list (List): List of elastic similar questions.
+            vector_list (List): List of vector similar questions.
+            num_retrieve (dict): Number of retrieved results.
 
-    def _get_similar_questions(self, text: str, num_retrieve: dict,
-                               threshold_vector: float,
-                               threshold_elastic: float) -> List:
-        """Get the similar questions.
+        Returns:
+            List: List of mixed similar questions.
+
+        """
+        for vector in vector_list:
+            to_add = None
+            query_id = vector['query_id']
+            vector['score'] = num_retrieve['vector'] * vector['score'] 
+            for i, elastic in enumerate(elastic_list):
+                if elastic['query_id'] == query_id:
+                    to_add = elastic_list.pop(i)
+                    break
+            if to_add:
+                vector['score'] = (vector['score'] +
+                                   num_retrieve['elastic'] * to_add['score'])
+
+        for elastic in elastic_list:
+            elastic['score'] = num_retrieve['elastic'] * elastic['score']
+            vector_list.append(elastic)
+
+        vector_list_sorted = sorted(vector_list, key=lambda item: item['score'],
+                                    reverse=True)
+
+        return vector_list_sorted[:num_retrieve['total_num']]
+
+    def _rrf_similar_questions(self, vector_list: List, elastic_list: List,
+                               num_retrieve: dict) -> List:
+        """Mix two lists with rrf.
+        
+        Args:
+            elastic_list (List): List of elastic similar questions.
+            vector_list (List): List of vector similar questions.
+            num_retrieve (dict): Number of retrieved results.
+
+        Returns:
+            List: List of mixed similar questions.
+
+        """
+        for vector in vector_list:
+            to_add = None
+            query_id = vector['query_id']
+            for i, elastic in enumerate(elastic_list):
+                if elastic['query_id'] == query_id:
+                    to_add = elastic_list.pop(i)
+                    break
+            if to_add:
+                vector['score_rrf'] = (vector['score_rrf'] + to_add['score_rrf'])
+
+        for elastic in elastic_list:
+            vector_list.append(elastic)
+
+        vector_list_sorted = sorted(vector_list, key=lambda item: item['score_rrf'],
+                                    reverse=True)
+
+        return vector_list_sorted[:num_retrieve['total_num']]
+
+    def _get_similar_questions_combined(self, text: str, num_retrieve: dict,
+                                        threshold_vector: float,
+                                        threshold_elastic: float) -> List:
+        """Get the similar questions with combined approach.
         
         Args:
             text (str): Input text to search for.
-            num_retrieve (int): Number of retrieved results.
+            num_retrieve (dict): Number of retrieved results.
             threshold (float): The threshold to filter the similar results.
             
         Returns:
@@ -211,7 +277,136 @@ class ChatBotContext:
 
         return similar_questions_dict
 
-    def get_context(self, text: str, num_retrieve: int=None,
+    def _get_similar_questions_boost(self, text: str, num_retrieve: int,
+                                     threshold_vector: float,
+                                     threshold_elastic: float) -> List:
+        """Get the similar questions with boost approach.
+        
+        Args:
+            text (str): Input text to search for.
+            num_retrieve (int): Number of retrieved results.
+            threshold (float): The threshold to filter the similar results.
+            
+        Returns:
+            List: List of similar questions.
+        
+        """
+        similar_questions_vector_dict = self._search_similar_questions_vector(
+            text=text,
+            num_retrieve=num_retrieve['total_num'] * 10,
+            threshold=threshold_vector)
+
+        similar_questions_elastic_dict = self._search_similar_questions_elastic(
+            text=text,
+            num_retrieve=num_retrieve['total_num'] * 10,
+            threshold=threshold_elastic)
+
+        def normalize_scores(results_dict: dict):
+            scores = [e['score'] for e in results_dict]
+            max_score = max(scores)
+            for result in results_dict:
+                result['score'] = result['score'] / max_score
+            return results_dict
+
+        similar_questions_vector_dict = normalize_scores(
+            similar_questions_vector_dict)
+        similar_questions_elastic_dict = normalize_scores(
+            similar_questions_elastic_dict)
+
+        similar_questions_dict = (
+            self._boost_similar_questions(
+                vector_list=similar_questions_vector_dict, 
+                elastic_list=similar_questions_elastic_dict,
+                num_retrieve=num_retrieve)
+        )
+
+        return similar_questions_dict
+    
+    def _get_similar_questions_rrf(self, text: str, num_retrieve: int,
+                                   threshold_vector: float,
+                                   threshold_elastic: float) -> List:
+        """Get the similar questions with rrf approach.
+        
+        Args:
+            text (str): Input text to search for.
+            num_retrieve (int): Number of retrieved results.
+            threshold (float): The threshold to filter the similar results.
+            
+        Returns:
+            List: List of similar questions.
+        
+        """
+        similar_questions_vector_dict = self._search_similar_questions_vector(
+            text=text,
+            num_retrieve=num_retrieve['total_num'] * 20,
+            threshold=threshold_vector)
+
+        similar_questions_elastic_dict = self._search_similar_questions_elastic(
+            text=text,
+            num_retrieve=num_retrieve['total_num'] * 20,
+            threshold=threshold_elastic)
+
+        def rrf_calculator(results_dict: dict):
+            for rank, result in enumerate(results_dict):
+                result['score_rrf'] = 1 / (rank + num_retrieve['rank_constant'])
+            return results_dict
+
+        similar_questions_vector_dict = rrf_calculator(
+            similar_questions_vector_dict)
+        similar_questions_elastic_dict = rrf_calculator(
+            similar_questions_elastic_dict)
+
+        similar_questions_dict = (
+            self._rrf_similar_questions(
+                vector_list=similar_questions_vector_dict, 
+                elastic_list=similar_questions_elastic_dict,
+                num_retrieve=num_retrieve)
+        )
+
+        return similar_questions_dict
+
+    def _get_similar_questions(self, text: str, retrieve_context_method: str,
+                               num_retrieve: dict,
+                               threshold_vector: float,
+                               threshold_elastic: float) -> List:
+        """Get the similar questions.
+        
+        Args:
+            text (str): Input text to search for.
+            num_retrieve (int): Number of retrieved results.
+            threshold (float): The threshold to filter the similar results.
+            
+        Returns:
+            List: List of similar questions.
+        
+        """
+        if retrieve_context_method == "combine":
+            return self._get_similar_questions_combined(
+                text=text, num_retrieve=num_retrieve, 
+                threshold_vector=threshold_vector,
+                threshold_elastic=threshold_elastic)
+
+        if retrieve_context_method == "boost":
+            return self._get_similar_questions_boost(
+                text=text,
+                num_retrieve=num_retrieve,
+                threshold_vector=threshold_vector,
+                threshold_elastic=threshold_elastic
+            )
+
+        if retrieve_context_method == "rrf":
+            return self._get_similar_questions_rrf(
+                text=text,
+                num_retrieve=num_retrieve,
+                threshold_vector=threshold_vector,
+                threshold_elastic=threshold_elastic
+            )
+
+        raise ValueError(
+            "'retrieve_context_method' must be from ['combine', 'boost', rrf]")
+
+    def get_context(self, text: str, num_retrieve: dict=None,
+                    retrieve_context_method: str=None,
                     threshold_vector: float=0.5, 
                     threshold_elastic: float=0) -> str:
         """Get the similar questions and answers.
@@ -227,12 +422,31 @@ class ChatBotContext:
         """
         if not num_retrieve:
             num_retrieve = self.num_retrieve_context
-    
+
+        if not retrieve_context_method:
+            retrieve_context_method = self.retrieve_context_method
+
         text = self.normalizer.process(text)
 
         similar_questions_dict = self._get_similar_questions(
-            text, 
-            num_retrieve=num_retrieve, threshold_vector=threshold_vector,
+            text=text,
+            retrieve_context_method=retrieve_context_method,
+            num_retrieve=num_retrieve,
+            threshold_vector=threshold_vector,
+            threshold_elastic=threshold_elastic)
+
+        similar_questions_dict_boost = self._get_similar_questions(
+            text=text,
+            retrieve_context_method="boost",
+            num_retrieve={'vector':0.5, 'elastic':0.5, 'total_num': 10},
+            threshold_vector=threshold_vector,
+            threshold_elastic=threshold_elastic)
+        
+        similar_questions_dict_combined = self._get_similar_questions(
+            text=text,
+            retrieve_context_method="combine",
+            num_retrieve={'vector':5, 'elastic':5},
+            threshold_vector=threshold_vector,
             threshold_elastic=threshold_elastic)
 
         similar_questions_dict = self._serach_for_context(

@@ -73,17 +73,20 @@ if __name__ == "__main__":
     }
     </style>
     """, unsafe_allow_html=True)
-        
-    if 'generated_chat_engine' not in st.session_state:
-        st.session_state['generated_chat_engine'] = []
     
     # Storing the chat
+    if 'generated_chat_engine' not in st.session_state:
+        st.session_state['generated_chat_engine'] = []
+
     if 'generated' not in st.session_state:
         st.session_state['generated'] = []
 
     if 'past' not in st.session_state:
         st.session_state['past'] = []
-        
+
+    if 'context' not in st.session_state:
+        st.session_state['context'] = []
+
     chat_engine = st.selectbox(
         'مدل زبانی ربات را انتخاب کنید.', tuple(CHAT_ENGINES))
     add_context = False
@@ -93,6 +96,7 @@ if __name__ == "__main__":
         chat_engine_model = chat_engine[:chat_engine.find("-prompt-engineering")]
         embedding_model = st.selectbox(
             'وکتورایزر جست‌وجوی کانتکست را انتخاب کنید.', tuple(EMBEDDING_MODEL))
+
     elif chat_engine.find("-classifier") != -1:
         chat_engine_model = chat_engine[:chat_engine.find("-classifier")]
     else:
@@ -103,8 +107,8 @@ if __name__ == "__main__":
 
     with st.spinner("لطفاً منتظر بمانید ..."):
         chatbot_config = get_chat_config(ChatBotModel(chat_engine_model), 
-                                        add_context=add_context,
-                                        embedding_model=EmbeddingModel(embedding_model))
+                                         add_context=add_context,
+                                         embedding_model=EmbeddingModel(embedding_model))
         if chat_engine.find("-classifier") != -1:
             chatbot_config.temperature = 1
             chatbot_config.num_responses = int(
@@ -124,6 +128,9 @@ if __name__ == "__main__":
 
     show_chat_engine = st.checkbox("نام مدل زبانی در پاسخ نمایش داده شود.", 
                                    value=True)
+    show_context = False
+    if chat_engine.find("-prompt-engineering") != -1:
+        show_context = st.checkbox("کانتکست نمایش داده شود.", value=False)
 
     FOOTER_STYLE = """
             <style>
@@ -185,6 +192,9 @@ if __name__ == "__main__":
                 if show_chat_engine:
                     st.write(st.session_state["generated_chat_engine"][i] + ":")
                 st.write(st.session_state["generated"][i])
+                if show_context:
+                    st.markdown('----')
+                    st.write(st.session_state["context"][i])
 
 
     if user_input:
@@ -197,7 +207,8 @@ if __name__ == "__main__":
                 f'<img src="data:image/gif;base64,{img_wait}" alt="wait gif" width="40px">',
                 unsafe_allow_html=True,
             )
-            output = chatbot.generate_response(user_input)
+            output, context = chatbot.generate_response(user_input,
+                                                        return_context=True)
             output = output.replace("\n", "  \n")
             output = output.replace("*", "\*")
             wait_placeholder.empty()
@@ -205,8 +216,12 @@ if __name__ == "__main__":
             if show_chat_engine:
                 message_to_print = (chat_engine + ":") + "  \n" + message_to_print
             wait_placeholder.write(message_to_print)
+            if show_context:
+                st.markdown('----')
+                st.write(context)
 
         # store the output
         st.session_state.generated_chat_engine.append(chat_engine)
         st.session_state.past.append(user_input)
         st.session_state.generated.append(output)
+        st.session_state.context.append(context)

@@ -1,5 +1,6 @@
 # VSCode
 .vscode
+/update
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

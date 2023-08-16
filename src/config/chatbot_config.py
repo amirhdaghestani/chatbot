@@ -69,7 +69,10 @@ class ChatBotConfig:
                                 if os.getenv("THRESHOLD_CONTEXT_ELASTIC") else 0
     num_retrieve_context = json.loads(os.getenv("NUM_RETRIEVE_CONTEXT")) \
                            if os.getenv("NUM_RETRIEVE_CONTEXT") \
-                           else {"vector": 5, "elastic": 5}
+                           else {"vector": 0.5, "elastic": 0.5, 'total_num': 5}
+    retrieve_context_method = str(os.getenv("RETRIEVE_CONTEXT_METHOD")) \
+                              if os.getenv("RETRIEVE_CONTEXT_METHOD") \
+                              else "boost"
     post_process = list(os.getenv("POST_PROCESS")) \
                    if os.getenv("POST_PROCESS") else []
     post_process_params = json.loads(os.getenv("POST_PROCESS_PARAMS")) \
@@ -86,6 +89,7 @@ class ChatBotConfig:
                  threshold_context_vector: float=None,
                  threshold_context_elastic: float=None,
                  num_retrieve_context: int=None,
+                 retrieve_context_method: str=None,
                  post_process: list=None,
                  post_process_params: dict=None) -> None:
         """Initializer of class"""
@@ -127,6 +131,8 @@ class ChatBotConfig:
             self.threshold_context_elastic = threshold_context_elastic
         if num_retrieve_context:
             self.num_retrieve_context = num_retrieve_context
+        if retrieve_context_method:
+            self.retrieve_context_method = retrieve_context_method
         if post_process:
             self.post_process = post_process
         if post_process_params:
@@ -154,6 +160,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
     )
     chatbot_config.threshold_context_vector = 0.5
     chatbot_config.threshold_context_elastic = 0
+    chatbot_config.retrieve_context_method = "rrf"
 
     # Exclusive configs
     if chat_engine == ChatBotModel.GPT4:
@@ -169,7 +176,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         else:
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.num_retrieve_context = {"vector": 5, "elastic": 5}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 5, "elastic": 5}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 1, "elastic": 0.2, 
+                                                   'total_num': 10}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 10}
         chatbot_config.add_zeroshot = True
 
     if chat_engine == ChatBotModel.TURBO:
@@ -185,7 +199,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         else:
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.num_retrieve_context = {"vector": 3, "elastic": 2}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 3, "elastic": 2}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 0.5, "elastic": 0.5, 
+                                                   'total_num': 5}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 5}
         chatbot_config.add_zeroshot = False
     
     elif chat_engine == ChatBotModel.DAVINCI:
@@ -202,7 +223,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         else:
             chatbot_config.temperature = 0.3
         chatbot_config.max_history = 2
-        chatbot_config.num_retrieve_context = {"vector": 1}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 1}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 0.5, "elastic": 0.5, 
+                                                   'total_num': 1}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 1}
         chatbot_config.add_zeroshot = False
 
     elif chat_engine == ChatBotModel.DAVINCIFAQ \
@@ -218,7 +246,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAgent:"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
-        chatbot_config.num_retrieve_context = {"vector": 1}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 1}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 0.5, "elastic": 0.5, 
+                                                   'total_num': 1}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 1}
         chatbot_config.add_zeroshot = False
 
     elif chat_engine == ChatBotModel.DAVINCIRBT:
@@ -232,7 +267,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nAgent: "
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
-        chatbot_config.num_retrieve_context = {"vector": 1}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 1}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 0.5, "elastic": 0.5, 
+                                                   'total_num': 1}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 1}
         chatbot_config.add_zeroshot = False
     
     elif chat_engine == ChatBotModel.DAVINCICHAT:
@@ -247,7 +289,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = "\nربات:"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 2
-        chatbot_config.num_retrieve_context = {"vector": 1}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 1}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 0.5, "elastic": 0.5, 
+                                                   'total_num': 1}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 1}
         chatbot_config.add_zeroshot = False
 
     elif chat_engine == ChatBotModel.ADACLASSIFIER:
@@ -263,7 +312,14 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.suffix_prompt = " ->"
         chatbot_config.temperature = 0
         chatbot_config.max_history = 1
-        chatbot_config.num_retrieve_context = {"vector": 1}
+        if chatbot_config.retrieve_context_method == "combine":
+            chatbot_config.num_retrieve_context = {"vector": 1}
+        elif chatbot_config.retrieve_context_method == "boost":
+            chatbot_config.num_retrieve_context = {"vector": 0.5, "elastic": 0.5, 
+                                                   'total_num': 1}
+        elif chatbot_config.retrieve_context_method == "rrf":
+            chatbot_config.num_retrieve_context = {"rank_constant": 60, 
+                                                   'total_num': 1}
         chatbot_config.add_zeroshot = False
 
     # To overwrite
@@ -311,6 +367,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.threshold_context_elastic = chatbot_config.threshold_context_elastic
     if not os.getenv("NUM_RETRIEVE_CONTEXT"):
         cg_to_return.num_retrieve_context = chatbot_config.num_retrieve_context
+    if not os.getenv("RETRIEVE_CONTEXT_METHOD"):
+        cg_to_return.retrieve_context_method = chatbot_config.retrieve_context_method
     if not os.getenv("POST_PROCESS"):
         cg_to_return.post_process = chatbot_config.post_process
     if not os.getenv("POST_PROCESS_PARAMS"):
