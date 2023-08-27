@@ -1,10 +1,14 @@
 """This module handles normalizing and expansion"""
 import re
+from pathlib import Path
 
 import hazm
 from num2words import num2words
 
 from logger.ve_logger import VeLogger
+
+
+STOP_WORD_PATH = "resources/stopwords/persian.dat"
 
 
 class Normalizer:
@@ -14,8 +18,9 @@ class Normalizer:
     logger = VeLogger()
 
     WORD_EXPANSION = {
-        "گیگ": "گیگابایت",
-        "گیگی": "گیگابایتی",
+        "گیگ": "گیگابایت اینترنت",
+        "گیگی": "گیگابایتی اینترنت",
+        "گیگابایت": "گیگابایت اینترنت",
         "پیش آواز": "آوای انتظار",
         "پیشواز": "آوای انتظار",
         "پیش اواز": "آوای انتظار",
@@ -27,6 +32,7 @@ class Normalizer:
         """Initializer of Normalizer"""
         self.norm = hazm.Normalizer()
         self.num_word = self._generate_num_word()
+        self.stop_words = hazm.stopwords_list(Path(STOP_WORD_PATH))
 
     def _num2word(self, number) -> str:
         """Convert number to word.
@@ -90,9 +96,23 @@ class Normalizer:
         """
 
         for word, replace in self.WORD_EXPANSION.items():
-            text = text.replace(f" {word} ", f" {replace} ")
+            text = text.replace(f" {word} ", f" ({replace}) ")
 
         return text
+
+    def remove_stop_words(self, text: str) -> str:
+        """Remove stop words in persian.
+        
+        Args:
+            text (str): Input string.
+            
+        Returns:
+            str: Removed stop words text.
+        
+        """
+        words = hazm.word_tokenize(text)
+        words = [word for word in words if not word in self.stop_words]
+        return ' '.join(words)
 
     def expansion(self, text: str) -> str:
         """Expand the input text.
@@ -108,7 +128,6 @@ class Normalizer:
         text = self._word_expansion(text=text)
 
         return text
-
 
     def normalize(self, text: str) -> str:
         """Normalize input text.

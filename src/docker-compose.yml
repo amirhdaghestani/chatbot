@@ -9,8 +9,6 @@ services:
       - chatbot.env
     depends_on:
       - elasticsearch
-    volumes:
-      - .:/app
     ports:
       - "8501:8501"
     networks:

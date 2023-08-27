@@ -11,6 +11,7 @@ from config.chatbot_config import get_chat_config, ChatBotModel
 from config.vector_config import EmbeddingModel
 from chatbot.chatbot import ChatBot
 
+
 FINETUNED_MODELS = [
     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56'
 ]

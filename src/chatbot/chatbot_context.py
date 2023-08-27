@@ -132,6 +132,7 @@ class ChatBotContext:
             list: list of dictionaries of similar results.
 
         """
+        text = self.normalizer.remove_stop_words(text)
         similar_results, scores, query_ids = self.elastic_service.search(
             text=text, num_retrieve=num_retrieve)
 
