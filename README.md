@@ -10,8 +10,13 @@ Run docker-compose:
 
 ```bash
 cd src
-docker-compose up --build
+docker compose up --build
 ```
 
 Note to provide 'elasticsearch.env' and 'chatbot.env' enviroment variables.
 Also put necessary resources in the 'resources' folder.
+
+The service is then available at the port 8501:
+```
+SERVER_IP_ADDRESS:8501
+```
