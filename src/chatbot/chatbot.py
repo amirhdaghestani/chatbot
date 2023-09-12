@@ -58,6 +58,8 @@ class ChatBot:
         self.delim_botdesc = chatbot_config.delim_botdesc
         self.delim_context = chatbot_config.delim_context
         self.delim_history = chatbot_config.delim_history
+        self.delim_websearch = chatbot_config.delim_websearch
+        self.prefix_websearch = chatbot_config.prefix_websearch
         self.prefix_context = chatbot_config.prefix_context
         self.prefix_prompt = chatbot_config.prefix_prompt
         self.suffix_prompt = chatbot_config.suffix_prompt
@@ -123,6 +125,31 @@ class ChatBot:
 
         return response_text
 
+    def _stream_chat_completion(self, message: str=None):
+        """Function to stream chat completion from openai.
+        
+        Args:
+            messages (str): messages for API call.
+        
+        Returns:
+            list: API response.
+
+        """
+        # Call API
+        response = openai.ChatCompletion.create(
+            model=self.chat_engine, 
+            messages=message,
+            max_tokens=self.max_tokens,
+            n=self.num_responses,
+            stop=self.stop_by,
+            temperature=self.temperature,
+            stream=True,
+        )
+
+        for res in response:
+            if res['choices'][0]['delta']:
+                yield res['choices'][0]['delta']['content']
+
     def _prompt_completion(self, prompt: str=None):
         """Function to call prompt completion from openai.
         
@@ -149,12 +176,38 @@ class ChatBot:
 
         return response_text
 
-    def _create_prompt(self, message: str=None, context: str=None):
+    def _stream_prompt_completion(self, prompt: str=None):
+        """Function to stream call prompt completion from openai.
+        
+        Args:
+            prompt (str): prompts for API call.
+        
+        Returns:
+            list: API response.
+
+        """
+        # Call API
+        response = openai.Completion.create(
+            model=self.chat_engine,
+            prompt=prompt,
+            max_tokens=self.max_tokens,
+            n=self.num_responses,
+            stop=self.stop_by,
+            temperature=self.temperature,
+            stream=True,
+        )
+
+        for res in response:
+            yield res['choices'][0]['text']
+
+    def _create_prompt(self, message: str=None, context: str=None,
+                       websearch: str=None):
         """Function to construct prompt.
 
         Args:
             message (str): Message to get response for.
             context (str): Context to answer from.
+            websearch (str): Result of websearch.
 
         Returns:
             str: Generated response.
@@ -165,25 +218,31 @@ class ChatBot:
         else:
             context = ""
 
+        if websearch:
+            websearch = self.prefix_websearch + websearch + self.delim_websearch
+        else:
+            websearch = ""
+
         messages = copy.copy(self.messages)
 
         messages[0] = {
             "role": "system", "content": (self.bot_description \
-                                          + self.delim_botdesc + context)
+                                          + self.delim_botdesc + websearch \
+                                          + context)
         }
-        
+
         messages.append({
             "role": "user", "content": message
         })
 
         return messages
-    
+
     def _convert_to_prompt_models(self, messages: str=None):
         """Convert the message to prompt based models
-        
+
         Args:
             messages (str): message to be converted.
-        
+
         Returns:
             str: Converted message.
 
@@ -266,20 +325,112 @@ class ChatBot:
             del self.messages[self.index_start_conversation]
 
         context = None
+        websearch = None
         if self.add_context:
-            context = self.chatbot_context.get_context(
+            context, websearch = self.chatbot_context.get_context(
                 message,
                 num_retrieve=self.num_retrieve_context,
                 threshold_vector=self.threshold_context_vector,
                 threshold_elastic=self.threshold_context_elastic)
 
-        messages = self._create_prompt(message=message, context=context)
+        messages = self._create_prompt(message=message, context=context,
+                                       websearch=websearch)
 
-        if self.chat_engine in __CHATMODELS__:
+        if context and websearch:
+            context = websearch + "\n\n" + context
+
+        if self.chat_engine in __CHATMODELS__ :
             response = self._chat_completion(message=messages)
         else:
             messages_converted = self._convert_to_prompt_models(messages)
             response = self._prompt_completion(prompt=messages_converted)
+
+        post_process = self._post_process(response=response, context=context, 
+                                          message=message)
+        best_response = self._choose_best_response(post_process)
+        
+        self.messages = messages
+        self.messages.append(
+            {"role": "assistant", "content": best_response}
+        )
+
+        return_tuple = best_response
+
+        if return_prompt or return_context:
+            return_tuple = (return_tuple,)
+
+        if return_prompt:
+            return_tuple += (messages,)
+
+        if return_context:
+            return_tuple += (context,)
+
+        return return_tuple
+
+    def stream_generate_response(self, message: str=None, return_prompt: bool=False,
+                          return_context: bool=False):
+        """Function to generate response from model.
+
+        Args:
+            message (str): Message to get response for.
+            add_context (bool): Whether to add context or not.
+            return_prompt (bool): Whether to return prompt or not.
+            return_context (bool): Whether to return context or not.
+
+        Returns:
+            list: Generated response.
+            list: Prompt of request.
+            list: Retrieved context.
+
+        Raises:
+            ValueError: when message is not provided.
+
+        """
+        # Check arguments
+        if message is None:
+            self.logger.error("message is None.")
+            raise ValueError("Provide message when calling this function.")
+
+        if len(self.messages) > 2 * self.max_history + self.index_start_conversation:
+            del self.messages[self.index_start_conversation]
+            del self.messages[self.index_start_conversation]
+
+        context = None
+        websearch = None
+        if self.add_context:
+            context, websearch = self.chatbot_context.get_context(
+                message,
+                num_retrieve=self.num_retrieve_context,
+                threshold_vector=self.threshold_context_vector,
+                threshold_elastic=self.threshold_context_elastic)
+
+        messages = self._create_prompt(message=message, context=context,
+                                       websearch=websearch)
+
+        if context and websearch:
+            context = websearch + "\n\n" + context
+
+        if self.chat_engine in __CHATMODELS__ and len(self.post_process) == 0:
+            response = self._stream_chat_completion(message=messages)
+        else:
+            messages_converted = self._convert_to_prompt_models(messages)
+            response = self._stream_prompt_completion(prompt=messages_converted)
+
+        final_response = ""
+        for res in response:
+            if return_prompt or return_context:
+                return_tuple = (res,)
+
+            if return_prompt:
+                return_tuple += (messages,)
+
+            if return_context:
+                return_tuple += (context,)
+
+            yield return_tuple
+
+            final_response += res
+        response = [final_response]
 
         post_process = self._post_process(response=response, context=context, 
                                           message=message)

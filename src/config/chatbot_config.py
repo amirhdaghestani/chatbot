@@ -45,19 +45,23 @@ class ChatBotConfig:
                       if os.getenv("BOT_DESC") else ""
     delim_botdesc = str(os.getenv("DELIM_BOTDESC")) \
                     if os.getenv("DELIM_BOTDESC") else "\n\n"
+    delim_websearch = str(os.getenv("DELIM_WEBSEARCH")) \
+                      if os.getenv("DELIM_WEBSEARCH") else "\n\n"
     delim_context = str(os.getenv("DELIM_CONTEXT")) \
                     if os.getenv("DELIM_CONTEXT") else "\n\n###\n\n"
     delim_history = str(os.getenv("DELIM_HISTORY")) \
                     if os.getenv("DELIM_HISTORY") else "\n\n"
     prefix_context = str(os.getenv("PREFIX_CONTEXT")) \
                     if os.getenv("PREFIX_CONTEXT") else "Context:\n"
+    prefix_websearch = str(os.getenv("PREFIX_WEBSEARCH")) \
+                       if os.getenv("PREFIX_WEBSEARCH") else "Websearch:\n"
     prefix_prompt = str(os.getenv("PREFIX_PROMPT")) \
                     if os.getenv("PREFIX_PROMPT") else "Customer: "
     suffix_prompt = str(os.getenv("PREFIX_PROMPT")) \
                     if os.getenv("PREFIX_PROMPT") else "\nAgent:"
-    add_context = bool(os.getenv("ADD_CONTEXT")) \
+    add_context = bool(os.getenv("ADD_CONTEXT").lower() in ['true']) \
                   if os.getenv("ADD_CONTEXT") else False
-    add_zeroshot = bool(os.getenv("ADD_ZEROSHOT")) \
+    add_zeroshot = bool(os.getenv("ADD_ZEROSHOT".lower() in ['true'])) \
                    if os.getenv("ADD_ZEROSHOT") else False
     embedding_model = EmbeddingModel(os.getenv("EMBEDDING_MODEL")) \
                       if os.getenv("EMBEDDING_MODEL") else EmbeddingModel.ZIBERT
@@ -77,12 +81,19 @@ class ChatBotConfig:
                    if os.getenv("POST_PROCESS") else []
     post_process_params = json.loads(os.getenv("POST_PROCESS_PARAMS")) \
                           if os.getenv("POST_PROCESS_PARAMS") else {}
+    web_search = bool(os.getenv("WEB_SEARCH").lower() in ['true']) \
+                 if os.getenv("WEB_SEARCH") \
+                 else False
+    restricted_sites = list(os.getenv("RESTRICTED_SITES")) \
+                       if os.getenv("RESTRICTED_SITES") else [""]
+    bot_description_web_search = None
 
     def __init__(self, chat_engine: str=None, api_key: str=None,
                  max_tokens: int=None,  num_responses: int=None,
                  stop_by: str=None, temperature: int=None,
                  bot_description: str=None, delim_botdesc: str=None,
                  delim_context: str=None, delim_history: str=None,
+                 delim_websearch: str=None, prefix_websearch: str=None,
                  prefix_context: str=None, prefix_prompt: str=None,
                  suffix_prompt: str=None, add_context: bool=None,
                  add_zeroshot: bool=None, max_history: int=None,
@@ -91,7 +102,8 @@ class ChatBotConfig:
                  num_retrieve_context: int=None,
                  retrieve_context_method: str=None,
                  post_process: list=None,
-                 post_process_params: dict=None) -> None:
+                 post_process_params: dict=None,
+                 web_search: bool=None, restricted_sites: list=None) -> None:
         """Initializer of class"""
         if chat_engine:
             self.chat_engine = chat_engine
@@ -111,6 +123,10 @@ class ChatBotConfig:
             self.delim_botdesc = delim_botdesc
         if delim_context:
             self.delim_context = delim_context
+        if delim_websearch:
+            self.delim_websearch = delim_websearch
+        if prefix_websearch:
+            self.prefix_websearch = prefix_websearch
         if prefix_context:
             self.prefix_context = prefix_context
         if prefix_prompt:
@@ -137,6 +153,10 @@ class ChatBotConfig:
             self.post_process = post_process
         if post_process_params:
             self.post_process = post_process_params
+        if web_search:
+            self.web_search = web_search
+        if restricted_sites:
+            self.restricted_sites = restricted_sites
 
 def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
                     embedding_model: EmbeddingModel=None, max_history: int=None):
@@ -158,16 +178,26 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         "بیا مرحله به مرحله فکر کنیم. لطفاَ تنها با اطلاعات ارائه شده در کانتکست پاسخ سوال را بده. " \
         "اگر پاسخ سوال در داخل کانتکست ارائه نشده بود بگو متاسفانه پاسخ سوال شما را نمیدانم."
     )
+    chatbot_config.bot_description_web_search = (
+        "تو ربات هوشمند پشتیبانی شرکت همراه اول هستی. " \
+        "بیا مرحله به مرحله فکر کنیم. در مرحله اول لطفاَ تنها با اطلاعات ارائه شده در کانتکست پاسخ سوال را بده. " \
+        "در مرحله‌ی بعد اگر پاسخ در داخل کانتکست نبود و در داخل اطلاعات ارائه شده در جست‌وجوی وب بود بگو 'سوال شما در حوزه‌ی اطلاعات تخصصی من نیست ولی' و سپس تنها با اطلاعات ارائه شده در جست‌وجوی وب پاسخ سوال را بده." \
+        "در مرحله‌ی بعد اگر پاسخ سوال در داخل کانتکست و در داخل جست‌وجوی وب ارائه نشده بود بگو متاسفانه پاسخ سوال شما را نمیدانم."
+    )
     chatbot_config.threshold_context_vector = 0.5
     chatbot_config.threshold_context_elastic = 0
     chatbot_config.retrieve_context_method = "rrf"
+    chatbot_config.web_search = False
+    chatbot_config.restricted_sites = [""]
 
     # Exclusive configs
     if chat_engine == ChatBotModel.GPT4:
-        chatbot_config.max_tokens = 512
+        chatbot_config.max_tokens = 1024
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n###\n\n"
         chatbot_config.delim_context = ""
+        chatbot_config.delim_websearch = "\n\n"
+        chatbot_config.prefix_websearch = "جست‌وجوی وب:\n"
         chatbot_config.prefix_context = "کانتکست:\n"
         chatbot_config.prefix_prompt = ""
         chatbot_config.suffix_prompt = ""
@@ -191,6 +221,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n###\n\n"
         chatbot_config.delim_context = ""
+        chatbot_config.delim_websearch = "\n\n"
+        chatbot_config.prefix_websearch = "جست‌وجوی وب:\n"
         chatbot_config.prefix_context = "کانتکست:\n"
         chatbot_config.prefix_prompt = ""
         chatbot_config.suffix_prompt = ""
@@ -214,7 +246,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n"
         chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.delim_context = "\n\n"
+        chatbot_config.delim_websearch = "\n\n"
+        chatbot_config.prefix_websearch = "جست‌وجوی وب:\n"
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "Question:\n"
         chatbot_config.suffix_prompt = "\nAnswer:"
@@ -239,7 +272,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n"
         chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.delim_context = "\n\n"
+        chatbot_config.delim_websearch = "\n\n"
+        chatbot_config.prefix_websearch = "جست‌وجوی وب:\n"
         chatbot_config.stop_by = "\n###\n"
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "Customer: "
@@ -261,7 +295,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n"
         chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.delim_context = "\n\n"
+        chatbot_config.delim_websearch = "\n\n"
+        chatbot_config.prefix_websearch = "جست‌وجوی وب:\n"
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "Customer: "
         chatbot_config.suffix_prompt = "\nAgent: "
@@ -282,7 +317,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n"
         chatbot_config.delim_context = "\n\n###\n\n"
-        chatbot_config.delim_context = "\n\n"
+        chatbot_config.delim_websearch = "\n\n"
+        chatbot_config.prefix_websearch = "جست‌وجوی وب:\n"
         chatbot_config.stop_by = ["\n###\n", "\n"]
         chatbot_config.prefix_context = "Context:\n"
         chatbot_config.prefix_prompt = "کاربر: "
@@ -305,7 +341,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = ""
         chatbot_config.delim_context = ""
-        chatbot_config.delim_context = ""
+        chatbot_config.delim_websearch = ""
+        chatbot_config.prefix_websearch = ""
         chatbot_config.stop_by = ["\n"]
         chatbot_config.prefix_context = ""
         chatbot_config.prefix_prompt = ""
@@ -328,6 +365,7 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
 
     # Set Configs and Overwrite if enviroment variable exists.
     cg_to_return = ChatBotConfig()
+    cg_to_return.bot_description_web_search = chatbot_config.bot_description_web_search
 
     if not os.getenv("CHAT_ENGINE"):
         cg_to_return.chat_engine = chatbot_config.chat_engine
@@ -341,12 +379,16 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.delim_botdesc = chatbot_config.delim_botdesc
     if not os.getenv("DELIM_CONTEXT"):
         cg_to_return.delim_context = chatbot_config.delim_context
+    if not os.getenv("DELIM_WEBSEARCH"):
+        cg_to_return.delim_websearch = chatbot_config.delim_websearch
     if not os.getenv("DELIM_HISTORY"):
         cg_to_return.delim_history = chatbot_config.delim_history
     if not os.getenv("STOP_BY"):
         cg_to_return.stop_by = chatbot_config.stop_by
     if not os.getenv("PREFIX_CONTEXT"):
         cg_to_return.prefix_context = chatbot_config.prefix_context
+    if not os.getenv("PREFIX_WEBSEARCH"):
+        cg_to_return.prefix_websearch = chatbot_config.prefix_websearch
     if not os.getenv("PREFIX_PROMPT"):
         cg_to_return.prefix_prompt = chatbot_config.prefix_prompt
     if not os.getenv("SUFFIX_PROMPT"):
@@ -373,5 +415,9 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.post_process = chatbot_config.post_process
     if not os.getenv("POST_PROCESS_PARAMS"):
         cg_to_return.post_process_params = chatbot_config.post_process_params
+    if not os.getenv("WEB_SEARCH"):
+        cg_to_return.web_search = chatbot_config.web_search
+    if not os.getenv("RESTRICTED_SITES"):
+        cg_to_return.restricted_sites = chatbot_config.restricted_sites
 
     return cg_to_return

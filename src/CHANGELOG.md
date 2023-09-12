@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2023-09-4
+
+### Added
+
+- Added websearch including restricted domains and general web search.
+- Added keyword and search phrase extraction
+- Added streaming to print output.
+
+### Updated
+
+- Updated elasticsearch via added extracted keywords.
+
+
 ## [0.9.0] - 2023-08-16
 
 ### Added

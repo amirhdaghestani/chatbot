@@ -11,6 +11,7 @@ from faiss_services.faiss_service import FaissService
 from elastic_services.elastic_service import ElasticService
 from vector_services.vector_service import VectorService
 from normalizer.normalizer import Normalizer
+from search_module import search_service
 
 
 class ChatBotContext:
@@ -32,6 +33,8 @@ class ChatBotContext:
         )
         self.num_retrieve_context = chatbot_config.num_retrieve_context
         self.retrieve_context_method = chatbot_config.retrieve_context_method
+        self.web_search = chatbot_config.web_search
+        self.restricted_sites = chatbot_config.restricted_sites
 
         self.faiss_service = FaissService(self.faiss_config)
         self.vector_service = VectorService(self.vector_config)
@@ -119,8 +122,9 @@ class ChatBotContext:
 
         return similar_results_dict
 
-    def _search_similar_questions_elastic(self, text: str, num_retrieve: int,
-                                         threshold: float) -> list:
+    def _search_similar_questions_elastic(self, text: str, keywords: list,
+                                          num_retrieve: int, 
+                                          threshold: float) -> list:
         """Search for similar questions in elasticsearch.
         
         Args:
@@ -133,6 +137,8 @@ class ChatBotContext:
 
         """
         text = self.normalizer.remove_stop_words(text)
+        keywords = " ".join(keywords)
+        text = text + " " + keywords
         similar_results, scores, query_ids = self.elastic_service.search(
             text=text, num_retrieve=num_retrieve)
 
@@ -241,7 +247,8 @@ class ChatBotContext:
 
         return vector_list_sorted[:num_retrieve['total_num']]
 
-    def _get_similar_questions_combined(self, text: str, num_retrieve: dict,
+    def _get_similar_questions_combined(self, text: str, keywords: list,
+                                        num_retrieve: dict,
                                         threshold_vector: float,
                                         threshold_elastic: float) -> List:
         """Get the similar questions with combined approach.
@@ -267,7 +274,7 @@ class ChatBotContext:
         if 'elastic' in num_retrieve.keys() and \
            num_retrieve['elastic'] > 0:
             similar_questions_elastic_dict = self._search_similar_questions_elastic(
-                text=text,
+                text=text, keywords=keywords,
                 num_retrieve=num_retrieve['elastic'], 
                 threshold=threshold_elastic)
 
@@ -278,7 +285,8 @@ class ChatBotContext:
 
         return similar_questions_dict
 
-    def _get_similar_questions_boost(self, text: str, num_retrieve: int,
+    def _get_similar_questions_boost(self, text: str, keywords: list,
+                                     num_retrieve: int,
                                      threshold_vector: float,
                                      threshold_elastic: float) -> List:
         """Get the similar questions with boost approach.
@@ -298,7 +306,7 @@ class ChatBotContext:
             threshold=threshold_vector)
 
         similar_questions_elastic_dict = self._search_similar_questions_elastic(
-            text=text,
+            text=text, keywords=keywords,
             num_retrieve=num_retrieve['total_num'] * 10,
             threshold=threshold_elastic)
 
@@ -325,7 +333,8 @@ class ChatBotContext:
 
         return similar_questions_dict
     
-    def _get_similar_questions_rrf(self, text: str, num_retrieve: int,
+    def _get_similar_questions_rrf(self, text: str, keywords: list,
+                                   num_retrieve: int,
                                    threshold_vector: float,
                                    threshold_elastic: float) -> List:
         """Get the similar questions with rrf approach.
@@ -345,7 +354,7 @@ class ChatBotContext:
             threshold=threshold_vector)
 
         similar_questions_elastic_dict = self._search_similar_questions_elastic(
-            text=text,
+            text=text, keywords=keywords,
             num_retrieve=num_retrieve['total_num'] * 20,
             threshold=threshold_elastic)
 
@@ -368,7 +377,8 @@ class ChatBotContext:
 
         return similar_questions_dict
 
-    def _get_similar_questions(self, text: str, retrieve_context_method: str,
+    def _get_similar_questions(self, text: str, keywords: list, 
+                               retrieve_context_method: str,
                                num_retrieve: dict,
                                threshold_vector: float,
                                threshold_elastic: float) -> List:
@@ -385,14 +395,14 @@ class ChatBotContext:
         """
         if retrieve_context_method == "combine":
             return self._get_similar_questions_combined(
-                text=text, num_retrieve=num_retrieve, 
+                text=text, num_retrieve=num_retrieve, keywords=keywords,
                 threshold_vector=threshold_vector,
                 threshold_elastic=threshold_elastic)
 
         if retrieve_context_method == "boost":
             return self._get_similar_questions_boost(
                 text=text,
-                num_retrieve=num_retrieve,
+                num_retrieve=num_retrieve, keywords=keywords,
                 threshold_vector=threshold_vector,
                 threshold_elastic=threshold_elastic
             )
@@ -400,7 +410,7 @@ class ChatBotContext:
         if retrieve_context_method == "rrf":
             return self._get_similar_questions_rrf(
                 text=text,
-                num_retrieve=num_retrieve,
+                num_retrieve=num_retrieve, keywords=keywords,
                 threshold_vector=threshold_vector,
                 threshold_elastic=threshold_elastic
             )
@@ -430,9 +440,21 @@ class ChatBotContext:
             retrieve_context_method = self.retrieve_context_method
 
         text = self.normalizer.process(text)
+        query_phrase, keywords = (
+            self.normalizer.get_search_phrase_and_keywords(text))
+
+        web_context = ""
+        if self.web_search:
+            web_results = search_service.run_chat(text, query_phrase,
+                                                keywords, self.restricted_sites,
+                                                "deep", 2)
+            for web_result in web_results:
+                if web_result['text']:
+                    web_context += web_result['text']
+                    break
 
         similar_questions_dict = self._get_similar_questions(
-            text=text,
+            text=text, keywords=keywords,
             retrieve_context_method=retrieve_context_method,
             num_retrieve=num_retrieve,
             threshold_vector=threshold_vector,
@@ -448,4 +470,4 @@ class ChatBotContext:
             if i != len(similar_questions_dict) - 1:
                 context_str += "\n\n"
 
-        return context_str
+        return context_str, web_context

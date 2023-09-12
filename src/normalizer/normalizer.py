@@ -6,6 +6,7 @@ import hazm
 from num2words import num2words
 
 from logger.ve_logger import VeLogger
+from search_module import utilityV2 as ut
 
 
 STOP_WORD_PATH = "resources/stopwords/persian.dat"
@@ -136,10 +137,22 @@ class Normalizer:
             text (str): Input text.
 
         Returns:
-            str: Normalized input text
+            str: Normalized input text.
         """
         return self.norm.normalize(text)
 
+    def get_search_phrase_and_keywords(self, text: str) -> tuple:
+        """Get the search phrase and keywords of input text.
+        
+        Args:
+            text (str): Input text.
+            
+        Returns:
+            tuple: Search phrase and extracted keywords.
+            
+        """
+        return ut.get_search_phrase_and_keywords(text, [])
+         
     def process(self, text: str) -> str:
         """Expand and normalize query.
         

@@ -8,3 +8,14 @@ tiktoken
 hazm
 num2words
 elasticsearch
+requests
+selenium
+wordfreq
+tenacity
+quart
+quart-cors
+nltk
+hypercorn
+pyvirtualdisplay
+jdatetime
+unstructured

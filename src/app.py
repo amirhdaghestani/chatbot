@@ -16,6 +16,7 @@ FINETUNED_MODELS = [
     'davinci:ft-personal:rbt-25-1100-ca-2023-04-30-12-42-56'
 ]
 
+
 CHAT_ENGINES = [
     'gpt-4-prompt-engineering',
     'gpt-4',
@@ -91,12 +92,17 @@ if __name__ == "__main__":
     chat_engine = st.selectbox(
         'مدل زبانی ربات را انتخاب کنید.', tuple(CHAT_ENGINES))
     add_context = False
+    web_search = ""
     embedding_model = EmbeddingModel.ZIBERT
     if chat_engine.find("-prompt-engineering") != -1:
         add_context = True
         chat_engine_model = chat_engine[:chat_engine.find("-prompt-engineering")]
         embedding_model = st.selectbox(
             'وکتورایزر جست‌وجوی کانتکست را انتخاب کنید.', tuple(EMBEDDING_MODEL))
+        
+        web_search = st.radio(
+            "جست‌وجوی اینترنت",
+            ["تنها پایگاه دانش", "سایت همراه اول", "کل اینترنت"])
 
     elif chat_engine.find("-classifier") != -1:
         chat_engine_model = chat_engine[:chat_engine.find("-classifier")]
@@ -121,6 +127,18 @@ if __name__ == "__main__":
             chatbot_config.post_process_params = {
                 'classification_threshold':-0.924
             }
+
+        if web_search == "سایت همراه اول":
+            chatbot_config.web_search = True
+            chatbot_config.restricted_sites = "*.mci.ir/*"
+            chatbot_config.bot_description = chatbot_config.bot_description_web_search
+            chat_engine += "-" + "websearch-mci"
+
+        if web_search == "کل اینترنت":
+            chatbot_config.web_search = True
+            chatbot_config.restricted_sites = ""
+            chatbot_config.bot_description = chatbot_config.bot_description_web_search
+            chat_engine += "-" + "websearch"
 
         if chat_engine not in st.session_state:
             st.session_state[chat_engine] = ChatBot(chatbot_config=chatbot_config)
@@ -208,15 +226,28 @@ if __name__ == "__main__":
                 f'<img src="data:image/gif;base64,{img_wait}" alt="wait gif" width="40px">',
                 unsafe_allow_html=True,
             )
-            output, context = chatbot.generate_response(user_input,
-                                                        return_context=True)
-            output = output.replace("\n", "  \n")
-            output = output.replace("*", "\*")
-            wait_placeholder.empty()
-            message_to_print = output
             if show_chat_engine:
-                message_to_print = (chat_engine + ":") + "  \n" + message_to_print
-            wait_placeholder.write(message_to_print)
+                message_to_print = (chat_engine + ":") + "  \n"
+            else:
+                message_to_print = ""
+            context = ""
+            output = ""
+            if len(chatbot.post_process) == 0:
+                for out, cont in chatbot.stream_generate_response(user_input,
+                                                                  return_context=True):
+                    out = out.replace("\n", "  \n")
+                    out = out.replace("*", "\*")
+                    wait_placeholder.empty()
+                    message_to_print += out
+                    output += out
+                    wait_placeholder.write(message_to_print)
+                context = cont
+            else:
+                wait_placeholder.empty()
+                output, context = chatbot.generate_response(user_input, 
+                                                            return_context=True)
+                message_to_print += output
+                wait_placeholder.write(message_to_print)
             if show_context:
                 st.markdown('----')
                 st.write(context)
