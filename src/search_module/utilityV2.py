@@ -16,8 +16,8 @@ from tenacity import *
 import selenium
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-google_key = "AIzaSyDwA83NhAgi7QlAX4ohWSDGisyB0f-Dics" #os.getenv("GOOGLE_KEY")
-google_cx = "f1461b67ca8714a3f" #os.getenv("GOOGLE_CX")
+google_key = os.getenv("GOOGLE_KEY")
+google_cx = os.getenv("GOOGLE_CX")
 GOOGLE = 'google'
 USER = 'user'
 ASSISTANT = 'assistant'
