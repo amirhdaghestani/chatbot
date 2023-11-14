@@ -12,6 +12,7 @@ from chatbot.chatbot_post_process import ChatBotPostProcess
 
 
 __CHATMODELS__ = [
+    "gpt-4-1106-preview",
     "gpt-3.5-turbo", 
     "gpt-4"
 ]

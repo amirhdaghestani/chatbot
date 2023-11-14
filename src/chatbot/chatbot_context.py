@@ -33,6 +33,7 @@ class ChatBotContext:
         )
         self.num_retrieve_context = chatbot_config.num_retrieve_context
         self.retrieve_context_method = chatbot_config.retrieve_context_method
+        self.retrieve_w_augmented_query = chatbot_config.retrieve_w_augmented_query
         self.web_search = chatbot_config.web_search
         self.restricted_sites = chatbot_config.restricted_sites
 
@@ -440,8 +441,11 @@ class ChatBotContext:
             retrieve_context_method = self.retrieve_context_method
 
         text = self.normalizer.process(text)
-        query_phrase, keywords = (
-            self.normalizer.get_search_phrase_and_keywords(text))
+
+        keywords = []
+        if self.retrieve_w_augmented_query or self.web_search:
+            query_phrase, keywords = (
+                self.normalizer.get_search_phrase_and_keywords(text))
 
         web_context = ""
         if self.web_search:

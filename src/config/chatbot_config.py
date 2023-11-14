@@ -6,6 +6,7 @@ from enum import Enum
 from config.vector_config import EmbeddingModel
 
 class ChatBotModel(Enum):
+    GPT4TURBO = "gpt-4-1106-preview"
     GPT4 = "gpt-4"
     TURBO = "gpt-3.5-turbo"
     DAVINCI = "text-davinci-003"
@@ -61,7 +62,7 @@ class ChatBotConfig:
                     if os.getenv("PREFIX_PROMPT") else "\nAgent:"
     add_context = bool(os.getenv("ADD_CONTEXT").lower() in ['true']) \
                   if os.getenv("ADD_CONTEXT") else False
-    add_zeroshot = bool(os.getenv("ADD_ZEROSHOT".lower() in ['true'])) \
+    add_zeroshot = bool(os.getenv("ADD_ZEROSHOT").lower() in ['true']) \
                    if os.getenv("ADD_ZEROSHOT") else False
     embedding_model = EmbeddingModel(os.getenv("EMBEDDING_MODEL")) \
                       if os.getenv("EMBEDDING_MODEL") else EmbeddingModel.ZIBERT
@@ -77,6 +78,9 @@ class ChatBotConfig:
     retrieve_context_method = str(os.getenv("RETRIEVE_CONTEXT_METHOD")) \
                               if os.getenv("RETRIEVE_CONTEXT_METHOD") \
                               else "boost"
+    retrieve_w_augmented_query = bool(os.getenv("RETRIEVE_W_AUGMENTED_QUERY").lower() in ['true']) \
+                                 if os.getenv("RETRIEVE_W_AUGMENTED_QUERY") \
+                                 else True
     post_process = list(os.getenv("POST_PROCESS")) \
                    if os.getenv("POST_PROCESS") else []
     post_process_params = json.loads(os.getenv("POST_PROCESS_PARAMS")) \
@@ -101,6 +105,7 @@ class ChatBotConfig:
                  threshold_context_elastic: float=None,
                  num_retrieve_context: int=None,
                  retrieve_context_method: str=None,
+                 retrieve_w_augmented_query: bool=None,
                  post_process: list=None,
                  post_process_params: dict=None,
                  web_search: bool=None, restricted_sites: list=None) -> None:
@@ -149,6 +154,8 @@ class ChatBotConfig:
             self.num_retrieve_context = num_retrieve_context
         if retrieve_context_method:
             self.retrieve_context_method = retrieve_context_method
+        if retrieve_w_augmented_query:
+            self.retrieve_w_augmented_query = retrieve_w_augmented_query
         if post_process:
             self.post_process = post_process
         if post_process_params:
@@ -191,7 +198,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
     chatbot_config.restricted_sites = [""]
 
     # Exclusive configs
-    if chat_engine == ChatBotModel.GPT4:
+    if chat_engine == ChatBotModel.GPT4 \
+        or chat_engine == ChatBotModel.GPT4TURBO:
         chatbot_config.max_tokens = 1024
         chatbot_config.num_responses = 1
         chatbot_config.delim_botdesc = "\n\n###\n\n"
@@ -411,6 +419,8 @@ def get_chat_config(chat_engine: ChatBotModel=None, add_context: bool=None,
         cg_to_return.num_retrieve_context = chatbot_config.num_retrieve_context
     if not os.getenv("RETRIEVE_CONTEXT_METHOD"):
         cg_to_return.retrieve_context_method = chatbot_config.retrieve_context_method
+    if not os.getenv("RETRIEVE_W_AUGMENTED_QUERY"):
+        cg_to_return.retrieve_w_augmented_query = chatbot_config.retrieve_w_augmented_query
     if not os.getenv("POST_PROCESS"):
         cg_to_return.post_process = chatbot_config.post_process
     if not os.getenv("POST_PROCESS_PARAMS"):
